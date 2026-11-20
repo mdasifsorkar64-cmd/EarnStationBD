@@ -5,7 +5,7 @@
   const safe = value => String(value ?? "");
   const statusBn = value => ({pending:"অপেক্ষমাণ",active:"সক্রিয়",paused:"স্থগিত",rejected:"বাতিল",approved:"অনুমোদিত"}[value] || value);
   const button = (label, action, className="") => {
-    const el=document.createElement("button"); el.type="button"; el.className="status-button "+className; el.textContent=label; el.addEventListener("click",action); return el;
+    const el=document.createElement("button"); el.type="button"; el.className="status-button "+className; el.textContent=label; el.addEventListener("click",()=>Promise.resolve().then(action).catch(error=>message(error.message||"কাজটি সম্পন্ন হয়নি।",true))); return el;
   };
   async function loadOffers() {
     $("offers-table").textContent="লোড হচ্ছে...";
