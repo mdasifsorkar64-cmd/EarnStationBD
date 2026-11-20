@@ -14,3 +14,6 @@
 
 /* Keep role-restricted navigation hidden even when .side-link sets display:flex. */
 .side-link[hidden]{display:none!important}
+
+/* Rewarded ads placeholder until a verified ad provider is connected */
+#ad-center .empty-state{max-width:620px;margin:auto}#ad-center .empty-icon{background:linear-gradient(135deg,#e3edff,#efe6ff)}
