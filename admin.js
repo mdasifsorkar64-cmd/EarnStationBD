@@ -10,6 +10,31 @@
   function showView(name){document.querySelectorAll(".admin-view").forEach(v=>v.classList.toggle("active",v.id==="view-"+name));document.querySelectorAll(".admin-nav").forEach(v=>v.classList.toggle("active",v.dataset.view===name));}
   document.querySelectorAll(".admin-nav").forEach(b=>b.addEventListener("click",()=>showView(b.dataset.view)));
   document.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>showView(b.dataset.go)));
+  async function loadSettings(){
+    $("settings-status").textContent="সেটিংস লোড হচ্ছে...";
+    const {data,error}=await client.rpc("admin_get_platform_settings");
+    if(error)throw error;
+    $("minimum-withdrawal").value=data.minimum_withdrawal;
+    $("ad-reward").value=data.ad_reward;
+    $("daily-ad-limit").value=data.daily_ad_limit;
+    $("ads-enabled").checked=!!data.ads_enabled;
+    $("settings-status").textContent="সেটিংস লোড হয়েছে। বিজ্ঞাপন সরবরাহকারী সংযোগের অবস্থা: এখনো যুক্ত নয়।";
+  }
+  $("settings-form").addEventListener("submit",async event=>{
+    event.preventDefault();
+    const minimum=Number($("minimum-withdrawal").value),reward=Number($("ad-reward").value),limit=Number($("daily-ad-limit").value),enabled=$("ads-enabled").checked;
+    if(!Number.isFinite(minimum)||minimum<1||!Number.isFinite(reward)||reward<0||!Number.isInteger(limit)||limit<0||limit>100){$("settings-status").textContent="সঠিক সীমা ও পরিমাণ লিখুন।";return;}
+    if(enabled){$("settings-status").textContent="Ad Provider-এর যাচাইকৃত callback যুক্ত না হওয়া পর্যন্ত বিজ্ঞাপন চালু করা যাবে না।";$("ads-enabled").checked=false;return;}
+    $("save-settings").disabled=true;
+    try{
+      const {error}=await client.rpc("admin_update_platform_settings",{p_minimum_withdrawal:minimum,p_ad_reward:reward,p_daily_ad_limit:limit,p_ads_enabled:false});
+      if(error)throw error;
+      $("settings-status").textContent="সেটিংস সংরক্ষিত হয়েছে। বিজ্ঞাপন আপাতত বন্ধ আছে।";
+      message("আয় ও উত্তোলনের নিয়ম আপডেট হয়েছে।");
+    }catch(e){$("settings-status").textContent=e.message||"সেটিংস সংরক্ষণ করা যায়নি。";message(e.message||"সেটিংস সংরক্ষণ করা যায়নি।",true);}
+    finally{$("save-settings").disabled=false;}
+  });
+  $("refresh-settings").addEventListener("click",()=>loadSettings().catch(e=>message(e.message,true)));
   async function loadMembers(){
     $("members-list").textContent="সদস্য তালিকা লোড হচ্ছে...";
     const {data,error}=await client.rpc("admin_list_members",{p_search:$("member-search").value.trim()});
@@ -61,7 +86,7 @@
   $("refresh-offers").addEventListener("click",()=>loadOffers().catch(e=>message(e.message,true)));
   $("refresh-conversions").addEventListener("click",()=>loadConversions().catch(e=>message(e.message,true)));
   $("refresh-withdrawals").addEventListener("click",()=>loadWithdrawals().catch(e=>message(e.message,true)));
-  async function refreshAll(){try{await Promise.all([loadMembers(),loadOffers(),loadConversions(),loadWithdrawals()]);message("সব তথ্য আপডেট হয়েছে।");}catch(e){message(e.message||"তথ্য লোড করা যায়নি।",true);}}
+  async function refreshAll(){try{await Promise.all([loadMembers(),loadOffers(),loadConversions(),loadWithdrawals(),loadSettings()]);message("সব তথ্য আপডেট হয়েছে।");}catch(e){message(e.message||"তথ্য লোড করা যায়নি।",true);}}
   $("refresh-all").addEventListener("click",refreshAll);
   (async()=>{try{const {data,error}=await client.auth.getSession();if(error)throw error;if(!data.session){location.replace("auth.html");return;}const {data:profile,error:pe}=await client.from("profiles").select("role").eq("id",data.session.user.id).single();if(pe)throw pe;if(profile?.role!=="admin"){location.replace("dashboard.html");return;}
     $("admin-top").hidden=false;$("admin-content").hidden=false;$("admin-footer").hidden=false;message("অ্যাডমিন যাচাই সফল।");await refreshAll();
