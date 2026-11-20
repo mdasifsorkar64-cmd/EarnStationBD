@@ -13,6 +13,12 @@ where expires_at is null;
 alter table public.withdrawal_requests
   alter column expires_at set default (now() + interval '5 hours');
 
+alter table public.withdrawal_requests
+  drop constraint if exists withdrawal_requests_status_check;
+alter table public.withdrawal_requests
+  add constraint withdrawal_requests_status_check
+  check (status in ('pending','approved','rejected','paid','refunded'));
+
 -- Refund ledger entries are linked to their withdrawal, preventing duplicate credits.
 alter table public.ledger_entries
   add column if not exists withdrawal_request_id uuid references public.withdrawal_requests(id);
