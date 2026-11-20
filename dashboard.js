@@ -7,6 +7,48 @@
   let currentUser = null;
   let currentAvailableBalance = 0;
 
+  function setupSectionNavigation() {
+    const main = document.querySelector(".dash-main");
+    const sidebarLinks = [...document.querySelectorAll(".dash-sidebar .side-link")];
+    const sections = {
+      overview: ["welcome-banner", "account-alert", "activity-panel"],
+      offers: ["offers"],
+      earnings: [],
+      commissions: [],
+      withdrawals: ["withdrawals"],
+      profile: ["profile"]
+    };
+    const views = {};
+    Object.keys(sections).forEach(key => {
+      const view = document.createElement("section");
+      view.className = "dash-view";
+      view.dataset.view = key;
+      main.appendChild(view);
+      views[key] = view;
+      sections[key].forEach(id => { const node = $(id); if (node) view.appendChild(node); });
+    });
+    const stats = $("earnings");
+    const cards = stats ? [...stats.querySelectorAll(".stat-card")] : [];
+    if (cards[0]) views.earnings.appendChild(cards[0]);
+    if (cards[3]) views.earnings.appendChild(cards[3]);
+    if (cards[1]) views.commissions.appendChild(cards[1]);
+    if (cards[2]) views.withdrawals.insertBefore(cards[2], $("withdrawals"));
+    if (stats) stats.remove();
+    function activate(key) {
+      if (!views[key]) key = "overview";
+      Object.entries(views).forEach(([name, view]) => view.classList.toggle("active", name === key));
+      sidebarLinks.forEach(link => link.classList.toggle("active", link.getAttribute("href") === "#" + key));
+      if (location.hash !== "#" + key) history.replaceState(null, "", "#" + key);
+      window.scrollTo({top:0, behavior:"smooth"});
+    }
+    sidebarLinks.forEach(link => {
+      const key = (link.getAttribute("href") || "").slice(1);
+      if (views[key]) link.addEventListener("click", event => { event.preventDefault(); activate(key); });
+    });
+    window.addEventListener("hashchange", () => activate(location.hash.slice(1)));
+    activate(views[location.hash.slice(1)] ? location.hash.slice(1) : "overview");
+  }
+
   const money = (value) => "৳ " + Number(value || 0).toLocaleString("en-BD", {minimumFractionDigits:2, maximumFractionDigits:2});
   const dateText = (value) => value ? new Date(value).toLocaleString("bn-BD", {dateStyle:"medium", timeStyle:"short"}) : "তারিখ নেই";
   const safe = (value) => String(value ?? "");
@@ -200,6 +242,8 @@
     if (error) { alert("লগআউট হয়নি: " + error.message); logout.disabled = false; }
     else window.location.replace("auth.html");
   });
+
+  setupSectionNavigation();
 
   client.auth.onAuthStateChange((_event, session) => {
     if (!session) window.location.replace("auth.html");
