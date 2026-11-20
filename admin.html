@@ -20,6 +20,7 @@
 <button class="admin-nav" data-view="offers"><span>✦</span> অফার পরিচালনা</button>
 <button class="admin-nav" data-view="conversions"><span>৳</span> কমিশন যাচাই</button>
 <button class="admin-nav" data-view="withdrawals"><span>▤</span> উত্তোলন ও পেমেন্ট</button>
+<button class="admin-nav" data-view="settings"><span>⚙</span> আয় ও সীমা নিয়ন্ত্রণ</button>
 </aside>
 <div class="admin-main">
 <section class="admin-view active" id="view-overview">
@@ -65,6 +66,20 @@
 <div class="view-heading"><div><p>PAYOUT CONTROL</p><h2>উত্তোলন ও পেমেন্ট</h2><span>সদস্যদের উত্তোলনের অনুরোধের তালিকা</span></div><button class="secondary" id="refresh-withdrawals">↻ রিফ্রেশ</button></div>
 <div class="admin-panel"><div id="withdrawals-list" class="admin-list">লোড হচ্ছে...</div>
 <p class="admin-help">এই প্যানেল এখন শুধু অনুরোধ দেখায়। বিকাশ/নগদ পেমেন্ট অনুমোদন বা সম্পন্ন করার ব্যবস্থা চালু নয়। এনক্রিপ্ট করা পেআউট তথ্য এখানে প্রকাশ করা হয় না।</p></div>
+</section>
+<section class="admin-view" id="view-settings">
+<div class="view-heading"><div><p>PLATFORM RULES</p><h2>আয় ও সীমা নিয়ন্ত্রণ</h2><span>সদস্যদের বিজ্ঞাপন-আয় ও উত্তোলনের নিয়ম</span></div><button class="secondary" id="refresh-settings">↻ রিফ্রেশ</button></div>
+<div class="admin-panel">
+<form id="settings-form" class="admin-form">
+<label>সর্বনিম্ন উত্তোলন (৳)<input id="minimum-withdrawal" type="number" min="1" step="1" required></label>
+<label>প্রতি সম্পূর্ণ বিজ্ঞাপনে প্রস্তাবিত কমিশন (৳)<input id="ad-reward" type="number" min="0" step="0.01" required></label>
+<label>প্রতি সদস্যের দৈনিক বিজ্ঞাপন সীমা<input id="daily-ad-limit" type="number" min="0" max="100" step="1" required></label>
+<label class="settings-toggle"><input id="ads-enabled" type="checkbox"> বিজ্ঞাপন-আয় চালু (শুধু যাচাইকৃত Ad Provider যুক্ত হলে)</label>
+<button type="submit" id="save-settings">সেটিংস সংরক্ষণ করুন</button>
+<p class="admin-help">বিজ্ঞাপন সরবরাহকারীর যাচাইকৃত completion callback যুক্ত না হওয়া পর্যন্ত বিজ্ঞাপন চালু করবেন না। এই সেটিংস একা বিজ্ঞাপন বা আয় তৈরি করে না। সর্বনিম্ন উত্তোলন সার্ভারেও যাচাই হবে।</p>
+</form>
+<div id="settings-status" class="admin-message" role="status">সেটিংস লোড হচ্ছে...</div>
+</div>
 </section>
 </div></div>
 </main>
