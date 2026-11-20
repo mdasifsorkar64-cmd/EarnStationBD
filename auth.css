@@ -1,0 +1,1 @@
+.auth-wrap{min-height:65vh;display:grid;place-items:center;padding:35px 18px}.auth-card{width:min(100%,500px);background:#fff;border:1px solid #e5ebe3;border-radius:16px;padding:28px}.auth-card h1{font-size:28px;margin:8px 0}.auth-card>p:not(.tag){font-size:13px;color:#65766d}.auth-card .button{margin-top:22px}
