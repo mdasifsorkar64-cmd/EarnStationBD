@@ -1,1 +1,73 @@
-<!doctype html><html lang="bn"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101b55"><title>অ্যাডমিন প্যানেল · EarnStationBD</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="admin.css"></head><body class="admin-page"><header class="admin-top" id="admin-top" hidden><a href="index.html" class="admin-brand">↗ EarnStation<span>BD</span></a><a href="dashboard.html">সদস্য ড্যাশবোর্ড</a></header><main class="admin-wrap" id="admin-content" hidden><section class="admin-hero"><div><p>SECURE CONTROL CENTER</p><h1>অ্যাডমিন প্যানেল</h1><span>অফার পরিচালনা ও যাচাইকৃত কমিশন পর্যালোচনা</span></div><span class="admin-shield">♜</span></section><div id="admin-message" class="admin-message" role="status">অ্যাকাউন্ট যাচাই হচ্ছে...</div><section class="admin-panel"><div class="admin-heading"><h2>নতুন পার্টনার অফার</h2><span>প্রথমে Pending থাকবে</span></div><form id="offer-form" class="admin-form"><label>পার্টনারের নাম<input name="partner_name" maxlength="100" required placeholder="অনুমোদিত পার্টনারের নাম"></label><label>অফারের শিরোনাম<input name="title" maxlength="160" required placeholder="অফারের নাম"></label><label>অফারের লিংক<input name="destination_url" type="url" required placeholder="https://..."></label><label>বিবরণ<textarea name="description" rows="3" maxlength="1200" placeholder="অফারের বিবরণ"></textarea></label><label>শর্তাবলি<textarea name="terms" rows="3" maxlength="3000" placeholder="পার্টনারের শর্তাবলি"></textarea></label><button type="submit" id="offer-submit">অফার সংরক্ষণ করুন</button><p class="admin-help">পার্টনারের লিখিত অনুমোদন ও বৈধ ট্র্যাকিং লিংক যাচাই না করে কোনো অফার Active করবেন না।</p></form></section><section class="admin-panel"><div class="admin-heading"><h2>অফার তালিকা</h2><button type="button" id="refresh-offers" class="secondary">রিফ্রেশ</button></div><div id="offers-table" class="admin-list">লোড হচ্ছে...</div></section><section class="admin-panel"><div class="admin-heading"><h2>কমিশন যাচাই</h2><button type="button" id="refresh-conversions" class="secondary">রিফ্রেশ</button></div><div id="conversions-list" class="admin-list">লোড হচ্ছে...</div><p class="admin-help">শুধু পার্টনারের নির্ভরযোগ্য রিপোর্টে যাচাইকৃত কনভার্সন অনুমোদন করুন। অনুমোদনের সঙ্গে একবারই লেজারে ক্রেডিট যোগ হবে।</p></section><section class="admin-panel warning-panel"><h2>উত্তোলন ও পেমেন্ট</h2><p>বিকাশ/নগদ পেমেন্ট এখনো চালু নয়। পেআউট নম্বর এনক্রিপশন ও নিরাপদ সার্ভার যাচাই সম্পন্ন না হওয়া পর্যন্ত কোনো উত্তোলন অনুমোদন বা পেমেন্টের দাবি করা যাবে না।</p></section></main><footer class="admin-footer" id="admin-footer" hidden>Power by : MD Asif Sorkar · EarnStationBD</footer><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-config.js"></script><script src="admin.js"></script></body></html>
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101b55"><title>অ্যাডমিন প্যানেল · EarnStationBD</title>
+<link rel="stylesheet" href="style.css"><link rel="stylesheet" href="admin.css">
+</head>
+<body class="admin-page">
+<header class="admin-top" id="admin-top" hidden>
+<a href="index.html" class="admin-brand">↗ EarnStation<span>BD</span></a>
+<a href="dashboard.html">সদস্য ড্যাশবোর্ড ↗</a>
+</header>
+<main class="admin-wrap" id="admin-content" hidden>
+<section class="admin-hero"><div><p>SECURE CONTROL CENTER</p><h1>অ্যাডমিন প্যানেল</h1><span>আপনার EarnStationBD পরিচালনা কেন্দ্র</span></div><span class="admin-shield">♜</span></section>
+<div id="admin-message" class="admin-message" role="status">অ্যাকাউন্ট যাচাই হচ্ছে...</div>
+<div class="admin-layout">
+<aside class="admin-sidebar" aria-label="অ্যাডমিন মেনু">
+<button class="admin-nav active" data-view="overview"><span>⌂</span> ওভারভিউ</button>
+<button class="admin-nav" data-view="members"><span>♙</span> সদস্য ব্যবস্থাপনা</button>
+<button class="admin-nav" data-view="offers"><span>✦</span> অফার পরিচালনা</button>
+<button class="admin-nav" data-view="conversions"><span>৳</span> কমিশন যাচাই</button>
+<button class="admin-nav" data-view="withdrawals"><span>▤</span> উত্তোলন ও পেমেন্ট</button>
+</aside>
+<div class="admin-main">
+<section class="admin-view active" id="view-overview">
+<div class="view-heading"><div><p>CONTROL CENTER</p><h2>ওভারভিউ</h2><span>প্ল্যাটফর্মের বর্তমান অবস্থা</span></div><button class="secondary" id="refresh-all">↻ রিফ্রেশ</button></div>
+<div class="stats-grid">
+<article class="stat-card"><span>♙</span><small>মোট সদস্য</small><strong id="stat-members">—</strong></article>
+<article class="stat-card"><span>✦</span><small>মোট অফার</small><strong id="stat-offers">—</strong></article>
+<article class="stat-card"><span>◷</span><small>অপেক্ষমাণ কমিশন</small><strong id="stat-pending">—</strong></article>
+<article class="stat-card"><span>▤</span><small>অপেক্ষমাণ উত্তোলন</small><strong id="stat-withdrawals">—</strong></article>
+</div>
+<div class="admin-panel"><h3>দ্রুত কাজ</h3><div class="quick-actions">
+<button data-go="members">♙ সদস্য দেখুন</button><button data-go="offers">✦ নতুন অফার যোগ করুন</button><button data-go="conversions">৳ কমিশন যাচাই করুন</button><button data-go="withdrawals">▤ উত্তোলন দেখুন</button>
+</div></div>
+<div class="admin-panel note-panel"><b>নিরাপত্তা নোট</b><p>সদস্যের পাসওয়ার্ড, OTP বা লগইন টোকেন কখনো অ্যাডমিন প্যানেলে দেখানো হয় না। প্রয়োজনে Auth-এর নিরাপদ password reset প্রক্রিয়া ব্যবহার করুন।</p></div>
+</section>
+<section class="admin-view" id="view-members">
+<div class="view-heading"><div><p>USER DIRECTORY</p><h2>সদস্য ব্যবস্থাপনা</h2><span>সদস্যের পরিচয় ও অ্যাকাউন্ট কার্যক্রম</span></div><button class="secondary" id="refresh-members">↻ রিফ্রেশ</button></div>
+<div class="admin-panel">
+<div class="search-row"><input id="member-search" type="search" placeholder="নাম, ইমেইল, ফোন বা User ID দিয়ে খুঁজুন"><span id="member-count">লোড হচ্ছে...</span></div>
+<div id="members-list" class="admin-list">সদস্য তালিকা লোড হচ্ছে...</div>
+<p class="admin-help">দেখানো তথ্য: User ID, ইমেইল, নাম, ফোন, ভূমিকা, নিবন্ধনের তারিখ ও সর্বশেষ লগইন। পাসওয়ার্ড/OTP/সেশন টোকেন দেখানো হয় না।</p>
+</div>
+</section>
+<section class="admin-view" id="view-offers">
+<div class="view-heading"><div><p>PARTNER OFFERS</p><h2>অফার পরিচালনা</h2><span>নতুন অফার যোগ ও অফারের অবস্থা নিয়ন্ত্রণ</span></div><button class="secondary" id="refresh-offers">↻ রিফ্রেশ</button></div>
+<div class="admin-panel"><div class="admin-heading"><h3>নতুন পার্টনার অফার</h3><span>প্রথমে Pending থাকবে</span></div>
+<form id="offer-form" class="admin-form">
+<label>পার্টনারের নাম<input name="partner_name" maxlength="100" required placeholder="অনুমোদিত পার্টনারের নাম"></label>
+<label>অফারের শিরোনাম<input name="title" maxlength="160" required placeholder="অফারের নাম"></label>
+<label>অফারের লিংক<input name="destination_url" type="url" required placeholder="https://..."></label>
+<label>বিবরণ<textarea name="description" rows="3" maxlength="1200" placeholder="অফারের বিবরণ"></textarea></label>
+<label>শর্তাবলি<textarea name="terms" rows="3" maxlength="3000" placeholder="পার্টনারের শর্তাবলি"></textarea></label>
+<button type="submit" id="offer-submit">অফার সংরক্ষণ করুন</button>
+<p class="admin-help">পার্টনারের লিখিত অনুমোদন ও বৈধ ট্র্যাকিং লিংক যাচাই না করে কোনো অফার Active করবেন না। ট্র্যাকিং যুক্ত না হওয়া পর্যন্ত Active করা বন্ধ থাকবে।</p>
+</form></div>
+<div class="admin-panel"><div class="admin-heading"><h3>অফার তালিকা</h3></div><div id="offers-table" class="admin-list">লোড হচ্ছে...</div></div>
+</section>
+<section class="admin-view" id="view-conversions">
+<div class="view-heading"><div><p>COMMISSION REVIEW</p><h2>কমিশন যাচাই</h2><span>পার্টনার কনভার্সন পর্যালোচনা</span></div><button class="secondary" id="refresh-conversions">↻ রিফ্রেশ</button></div>
+<div class="admin-panel"><div id="conversions-list" class="admin-list">লোড হচ্ছে...</div><p class="admin-help">শুধু পার্টনারের নির্ভরযোগ্য রিপোর্টে যাচাইকৃত কনভার্সন অনুমোদন করুন। অনুমোদনের সঙ্গে একবারই লেজারে ক্রেডিট যোগ হবে।</p></div>
+</section>
+<section class="admin-view" id="view-withdrawals">
+<div class="view-heading"><div><p>PAYOUT CONTROL</p><h2>উত্তোলন ও পেমেন্ট</h2><span>সদস্যদের উত্তোলনের অনুরোধের তালিকা</span></div><button class="secondary" id="refresh-withdrawals">↻ রিফ্রেশ</button></div>
+<div class="admin-panel"><div id="withdrawals-list" class="admin-list">লোড হচ্ছে...</div>
+<p class="admin-help">এই প্যানেল এখন শুধু অনুরোধ দেখায়। বিকাশ/নগদ পেমেন্ট অনুমোদন বা সম্পন্ন করার ব্যবস্থা চালু নয়। এনক্রিপ্ট করা পেআউট তথ্য এখানে প্রকাশ করা হয় না।</p></div>
+</section>
+</div></div>
+</main>
+<footer class="admin-footer" id="admin-footer" hidden>Power by : MD Asif Sorkar · EarnStationBD</footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-config.js"></script><script src="admin.js"></script>
+</body></html>
