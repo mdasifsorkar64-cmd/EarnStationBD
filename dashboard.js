@@ -13,6 +13,7 @@
     const sections = {
       overview: ["welcome-banner", "account-alert", "activity-panel"],
       offers: ["offers"],
+      ads: ["ad-center"],
       earnings: [],
       commissions: [],
       withdrawals: ["withdrawals"],
