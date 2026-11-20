@@ -232,8 +232,27 @@
     if(!/^01[3-9][0-9]{8}$/.test(account)) return withdrawMessage("সঠিক ১১ সংখ্যার বাংলাদেশি মোবাইল নম্বর লিখুন।","error");
     if(!Number.isFinite(amount)||amount<=0) return withdrawMessage("সঠিক উত্তোলনের পরিমাণ লিখুন।","error");
     if(amount>currentAvailableBalance) return withdrawMessage("সঠিক ব্যালেন্স লিখুন। আপনার উত্তোলনযোগ্য ব্যালেন্স "+money(currentAvailableBalance)+"।","error");
-    if(amount<currentAvailableBalance && amount<=0) return withdrawMessage("সঠিক ব্যালেন্স লিখুন।","error");
-    withdrawMessage("তথ্য সঠিক। তবে অ্যাকাউন্ট নম্বর নিরাপদে এনক্রিপ্ট করার সার্ভার সংযোগ এখনো প্রস্তুত নয়। নিরাপত্তার জন্য আপনার নম্বর সংরক্ষণ বা উত্তোলনের অনুরোধ পাঠানো হয়নি।","info");
+    const {data:{session}} = await client.auth.getSession();
+    if(!session) return withdrawMessage("সেশন শেষ হয়েছে। আবার লগইন করুন।","error");
+    const submit=$("withdraw-submit");
+    submit.disabled=true; submit.textContent="অনুরোধ পাঠানো হচ্ছে...";
+    withdrawMessage("");
+    try {
+      const response=await fetch("http://127.0.0.1:3001/api/withdrawal",{
+        method:"POST",
+        headers:{"Content-Type":"application/json","Authorization":"Bearer "+session.access_token},
+        body:JSON.stringify({method,account,amount})
+      });
+      const result=await response.json();
+      if(!response.ok) throw new Error(result.error || "উত্তোলনের অনুরোধ পাঠানো যায়নি।");
+      withdrawMessage(result.message || "উত্তোলনের অনুরোধ জমা হয়েছে।","success");
+      withdrawForm.reset();
+      await loadDashboard(currentUser);
+    } catch(error) {
+      withdrawMessage(error.message || "নিরাপদ সার্ভারে সংযোগ করা যায়নি।","error");
+    } finally {
+      submit.disabled=false; submit.textContent="উত্তোলনের অনুরোধ করুন";
+    }
   });
 
   logout.addEventListener("click", async () => {
