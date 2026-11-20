@@ -19,7 +19,7 @@ function json(res, status, body) {
   });
   res.end(JSON.stringify(body));
 }
-function encryptAccount(account) {
+function decryptAccount(value) {\n  const [version, encoded] = String(value || "").split(".");\n  if (version !== "v1" || !encoded) throw new Error("Unsupported payout ciphertext");\n  const packed = Buffer.from(encoded, "base64");\n  const key = Buffer.from(PAYOUT_ENCRYPTION_KEY, "base64");\n  if (key.length !== 32 || packed.length < 29) throw new Error("Invalid payout encryption data");\n  const iv = packed.subarray(0,12), tag = packed.subarray(12,28), data = packed.subarray(28);\n  const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv);\n  decipher.setAuthTag(tag);\n  return Buffer.concat([decipher.update(data), decipher.final()]).toString("utf8");\n}\nasync function requireAdmin(authorization) {\n  const base = SUPABASE_URL.replace(/\\/$/, "");\n  const userRes = await fetch(base + "/auth/v1/user", {headers:{apikey:SUPABASE_ANON_KEY,Authorization:authorization}});\n  if (!userRes.ok) throw new Error("আবার লগইন করুন।");\n  const user = await userRes.json();\n  const roleRes = await fetch(base + "/rest/v1/profiles?id=eq." + encodeURIComponent(user.id) + "&select=role", {headers:{apikey:SUPABASE_ANON_KEY,Authorization:authorization}});\n  const roles = await roleRes.json();\n  if (!roleRes.ok || !roles[0] || roles[0].role !== "admin") throw new Error("অ্যাডমিন অনুমতি নেই।");\n  return user;\n}\nfunction encryptAccount(account) {
   const key = Buffer.from(PAYOUT_ENCRYPTION_KEY, "base64");
   if (key.length !== 32) throw new Error("PAYOUT_ENCRYPTION_KEY must decode to exactly 32 bytes");
   const iv = crypto.randomBytes(12);
@@ -30,7 +30,7 @@ function encryptAccount(account) {
 }
 const server = http.createServer(async (req, res) => {
   if (req.method === "OPTIONS") return json(res, 204, {});
-  if (req.method !== "POST" || req.url !== "/api/withdrawal") return json(res, 404, { error: "Not found" });
+  const isWithdrawal = req.method === "POST" && req.url === "/api/withdrawal";\n  const isAdminList = req.method === "GET" && req.url === "/api/admin/withdrawals";\n  const isAdminComplete = req.method === "POST" && req.url === "/api/admin/withdrawals/complete";\n  if (!isWithdrawal && !isAdminList && !isAdminComplete) return json(res, 404, { error: "Not found" });
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !PAYOUT_ENCRYPTION_KEY) {
     return json(res, 503, { error: "সার্ভারের নিরাপদ কনফিগারেশন এখনো সম্পূর্ণ নয়।" });
   }
@@ -74,7 +74,7 @@ const server = http.createServer(async (req, res) => {
       } catch (_) {}
       return json(res, response.status === 401 ? 401 : 400, { error: message });
     }
-    return json(res, 200, { success: true, request_id: result, message: "উত্তোলনের অনুরোধ জমা হয়েছে। প্রশাসকের যাচাইয়ের অপেক্ষায় আছে।" });
+    return json(res, 200, { success: true, request_id: result, message: "উত্তোলনের অনুরোধ জমা হয়েছে। সর্বোচ্চ ৫ ঘণ্টার মধ্যে পেমেন্ট সম্পন্ন করা হবে, ইনশাআল্লাহ।" });
   } catch (error) {
     return json(res, 400, { error: error.message === "Unexpected end of JSON input" ? "সঠিক তথ্য পাঠান।" : "অনুরোধটি সম্পন্ন করা যায়নি।" });
   }
