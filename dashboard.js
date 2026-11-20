@@ -5,6 +5,7 @@
   const profileForm = $("profile-form");
   const profileSave = $("profile-save");
   let currentUser = null;
+  let currentAvailableBalance = 0;
 
   const money = (value) => "৳ " + Number(value || 0).toLocaleString("en-BD", {minimumFractionDigits:2, maximumFractionDigits:2});
   const dateText = (value) => value ? new Date(value).toLocaleString("bn-BD", {dateStyle:"medium", timeStyle:"short"}) : "তারিখ নেই";
@@ -105,7 +106,9 @@
     const pending = conversions.filter(item => item.status === "pending");
     $("total-earned").textContent = money(credits);
     $("approved-commission").textContent = money(approved);
-    $("available-balance").textContent = money(Math.max(0, credits - debits - reserved));
+    currentAvailableBalance = Math.max(0, credits - debits - reserved);
+    $("available-balance").textContent = money(currentAvailableBalance);
+    $("withdraw-form-balance").textContent = money(currentAvailableBalance);
     $("pending-count").textContent = pending.length.toLocaleString("bn-BD");
     $("pending-commission").textContent = pending.length ? pending.length.toLocaleString("bn-BD") + "টি কনভার্সন যাচাই হচ্ছে" : "নতুন অপেক্ষমাণ কমিশন নেই";
 
@@ -174,6 +177,21 @@
     } finally {
       profileSave.disabled = false; profileSave.textContent = "পরিবর্তন সংরক্ষণ করুন";
     }
+  });
+
+  const withdrawForm = $("withdraw-form");
+  const withdrawMessage = (text,type="") => { $("withdraw-message").textContent=text; $("withdraw-message").className="withdraw-message "+type; };
+  withdrawForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const method=$("withdraw-method").value;
+    const account=$("withdraw-account").value.replace(/[^0-9]/g,"");
+    const amount=Number($("withdraw-amount").value);
+    if(!method) return withdrawMessage("বিকাশ অথবা নগদ অ্যাকাউন্টের ধরন নির্বাচন করুন।","error");
+    if(!/^01[3-9][0-9]{8}$/.test(account)) return withdrawMessage("সঠিক ১১ সংখ্যার বাংলাদেশি মোবাইল নম্বর লিখুন।","error");
+    if(!Number.isFinite(amount)||amount<=0) return withdrawMessage("সঠিক উত্তোলনের পরিমাণ লিখুন।","error");
+    if(amount>currentAvailableBalance) return withdrawMessage("সঠিক ব্যালেন্স লিখুন। আপনার উত্তোলনযোগ্য ব্যালেন্স "+money(currentAvailableBalance)+"।","error");
+    if(amount<currentAvailableBalance && amount<=0) return withdrawMessage("সঠিক ব্যালেন্স লিখুন।","error");
+    withdrawMessage("তথ্য সঠিক। তবে অ্যাকাউন্ট নম্বর নিরাপদে এনক্রিপ্ট করার সার্ভার সংযোগ এখনো প্রস্তুত নয়। নিরাপত্তার জন্য আপনার নম্বর সংরক্ষণ বা উত্তোলনের অনুরোধ পাঠানো হয়নি।","info");
   });
 
   logout.addEventListener("click", async () => {
