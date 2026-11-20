@@ -85,7 +85,10 @@
       if(!data.session){location.replace("auth.html");return;}
       const {data:profile,error:profileError}=await client.from("profiles").select("role").eq("id",data.session.user.id).single();
       if(profileError)throw profileError;
-      if(profile?.role!=="admin"){message("এই প্যানেল ব্যবহারের অনুমতি আপনার নেই।",true);$("offer-form").hidden=true;return;}
+      if(profile?.role!=="admin"){location.replace("dashboard.html");return;}
+      $("admin-top").hidden=false;
+      $("admin-content").hidden=false;
+      $("admin-footer").hidden=false;
       message("অ্যাডমিন যাচাই সফল।");
       await Promise.all([loadOffers(),loadConversions()]);
     }catch(error){message(error.message||"অ্যাডমিন প্যানেল লোড করা যায়নি।",true);}
