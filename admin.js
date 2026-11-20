@@ -21,10 +21,12 @@
       row.append(info);
       const actions=document.createElement("div");actions.className="admin-row-actions";
       ["active","paused","rejected"].forEach(status=>{
-        actions.append(button(statusBn(status),async()=>{
-          if(status==="active"&&!confirm("পার্টনারের অনুমোদন, ট্র্যাকিং লিংক ও শর্ত যাচাই করেছেন তো?")) return;
+        const actionButton=button(status==="active"?"সক্রিয় · ট্র্যাকিং অপেক্ষমাণ":statusBn(status),async()=>{
+          if(status==="active") return;
           await changeOffer(item.id,status);
-        },status));
+        },status);
+        if(status==="active"){actionButton.disabled=true;actionButton.title="সদস্যভিত্তিক ক্লিক ট্র্যাকিং ও পার্টনার পোস্টব্যাক যুক্ত না হওয়া পর্যন্ত সক্রিয় করা যাবে না";}
+        actions.append(actionButton);
       });
       row.append(actions);root.append(row);
     });
