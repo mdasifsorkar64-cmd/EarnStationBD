@@ -11,3 +11,6 @@
 
 /* Separate member menu views */
 .dash-view{display:none;min-width:0}.dash-view.active{display:block}.dash-view>.stat-card{margin:0 0 14px}.dash-view>.panel:first-child{margin-top:0}.dash-view>.welcome-banner{margin-bottom:0}
+
+/* Keep role-restricted navigation hidden even when .side-link sets display:flex. */
+.side-link[hidden]{display:none!important}
