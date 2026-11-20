@@ -26,6 +26,52 @@
     return node;
   };
 
+  function renderOffers(offers, error) {
+    const root = $("offers-list");
+    root.replaceChildren();
+    if (error) {
+      const empty = document.createElement("div"); empty.className = "empty-state";
+      addText(empty,"b","","অফার দেখানো যাচ্ছে না");
+      addText(empty,"p","","ডেটাবেস থেকে অফার আনা যায়নি। পরে আবার চেষ্টা করুন।");
+      root.appendChild(empty); return;
+    }
+    if (!offers.length) {
+      const empty = document.createElement("div"); empty.className = "empty-state";
+      addText(empty,"span","empty-icon","✦");
+      addText(empty,"b","","এখনো কোনো সক্রিয় অফার নেই");
+      addText(empty,"p","","নতুন অনুমোদিত অফার প্রকাশ হলে এখানে দেখা যাবে।");
+      root.appendChild(empty); return;
+    }
+    offers.forEach(offer => {
+      const card = document.createElement("article"); card.className = "offer-card";
+      const top = document.createElement("div"); top.className = "offer-card-top";
+      addText(top,"span","offer-partner",offer.partner_name);
+      addText(top,"span","offer-status","সক্রিয়");
+      card.appendChild(top);
+      addText(card,"h3","offer-title",offer.title);
+      addText(card,"p","offer-description",offer.description || "এই অফারের বিস্তারিত শর্ত পড়ে নিন।");
+      if (offer.terms) {
+        const details = document.createElement("details"); details.className = "offer-terms";
+        addText(details,"summary","","অফারের শর্তাবলি");
+        addText(details,"p","",offer.terms);
+        card.appendChild(details);
+      }
+      let destination = null;
+      try {
+        const parsed = new URL(offer.destination_url);
+        if (parsed.protocol === "https:" || parsed.protocol === "http:") destination = parsed.href;
+      } catch (_) {}
+      if (destination) {
+        const link = addText(card,"a","offer-action","পার্টনারের অফার দেখুন ↗");
+        link.href = destination; link.target = "_blank"; link.rel = "noopener noreferrer";
+      } else {
+        const disabled = addText(card,"span","offer-action offer-action-disabled","লিংক প্রস্তুত নয়");
+        disabled.setAttribute("aria-disabled","true");
+      }
+      root.appendChild(card);
+    });
+  }
+
   async function loadDashboard(user) {
     currentUser = user;
     $("member-email").textContent = user.email || "সদস্য অ্যাকাউন্ট";
@@ -69,6 +115,8 @@
 
     renderActivity(ledger, conversions, withdrawals);
     renderWithdrawals(withdrawals);
+    const offerResult = await client.from("offers").select("id,title,description,partner_name,destination_url,terms,created_at").eq("status","active").order("created_at",{ascending:false}).limit(30);
+    renderOffers(offerResult.data || [], offerResult.error);
   }
 
   function renderActivity(ledger, conversions, withdrawals) {
@@ -88,7 +136,7 @@
       const row = document.createElement("div"); row.className="activity-row";
       const info = document.createElement("div"); info.className="activity-info";
       addText(info,"b","",item.title); addText(info,"span","",item.detail); addText(info,"small","",dateText(item.date));
-      const amount = addText(row,"strong",item.positive ? "activity-amount positive" : "activity-amount",item.amount);
+      addText(row,"strong",item.positive ? "activity-amount positive" : "activity-amount",item.amount);
       row.appendChild(info); root.appendChild(row);
     });
   }
