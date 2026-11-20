@@ -19,13 +19,7 @@ alter table public.withdrawal_requests
   add constraint withdrawal_requests_status_check
   check (status in ('pending','approved','rejected','paid','refunded'));
 
--- Refund ledger entries are linked to their withdrawal, preventing duplicate credits.
-alter table public.ledger_entries
-  add column if not exists withdrawal_request_id uuid references public.withdrawal_requests(id);
-
-create unique index if not exists ledger_one_refund_per_withdrawal
-  on public.ledger_entries(withdrawal_request_id)
-  where withdrawal_request_id is not null;
+-- Refunds release the reserved withdrawal amount; they must not create a second ledger credit.
 
 create index if not exists withdrawals_pending_expiry_idx
   on public.withdrawal_requests(expires_at)
@@ -50,16 +44,6 @@ begin
     order by created_at
     for update skip locked
   loop
-    insert into public.ledger_entries(
-      user_id, withdrawal_request_id, entry_type, amount, description
-    )
-    values (
-      v_row.user_id, v_row.id, 'credit', v_row.amount,
-      'উইথড্র ৫ ঘণ্টার মধ্যে পরিশোধ না হওয়ায় স্বয়ংক্রিয় টাকা ফেরত'
-    )
-    on conflict (withdrawal_request_id) where withdrawal_request_id is not null
-    do nothing;
-
     update public.withdrawal_requests
     set status = 'refunded', refunded_at = coalesce(refunded_at, now()),
         reviewed_at = now(),
@@ -98,16 +82,6 @@ begin
   end if;
 
   if coalesce(v_row.expires_at, v_row.created_at + interval '5 hours') <= now() then
-    insert into public.ledger_entries(
-      user_id, withdrawal_request_id, entry_type, amount, description
-    )
-    values (
-      v_row.user_id, v_row.id, 'credit', v_row.amount,
-      'উইথড্র ৫ ঘণ্টার মধ্যে পরিশোধ না হওয়ায় স্বয়ংক্রিয় টাকা ফেরত'
-    )
-    on conflict (withdrawal_request_id) where withdrawal_request_id is not null
-    do nothing;
-
     update public.withdrawal_requests
     set status='refunded', refunded_at=coalesce(refunded_at,now()),
         reviewed_at=now(),
