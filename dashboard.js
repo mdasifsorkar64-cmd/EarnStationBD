@@ -17,6 +17,7 @@
       earnings: [],
       commissions: [],
       withdrawals: ["withdrawals"],
+      inbox: ["inbox"],
       profile: ["profile"]
     };
     const views = {};
@@ -53,7 +54,7 @@
   const money = (value) => "৳ " + Number(value || 0).toLocaleString("en-BD", {minimumFractionDigits:2, maximumFractionDigits:2});
   const dateText = (value) => value ? new Date(value).toLocaleString("bn-BD", {dateStyle:"medium", timeStyle:"short"}) : "তারিখ নেই";
   const safe = (value) => String(value ?? "");
-  const statusText = (status) => ({pending:"অপেক্ষমাণ",approved:"অনুমোদিত",rejected:"বাতিল",paid:"পরিশোধিত"})[status] || "অজানা";
+  const statusText = (status) => ({pending:"PENDING · অপেক্ষমাণ",approved:"অনুমোদিত",rejected:"বাতিল",paid:"SUCCESS · পরিশোধিত",refunded:"REFUNDED · টাকা ফেরত"} )[status] || "অজানা";
   const setMessage = (message, type="") => { $("profile-message").textContent = message; $("profile-message").className = "profile-message " + type; };
   const showError = (message) => {
     const alert = $("account-alert");
@@ -124,7 +125,7 @@
       client.from("profiles").select("full_name,phone,created_at,role").eq("id", user.id).maybeSingle(),
       client.from("ledger_entries").select("id,entry_type,amount,description,created_at").eq("user_id", user.id).order("created_at", {ascending:false}).limit(50),
       client.from("partner_conversions").select("id,partner_name,commission_amount,status,received_at").eq("user_id", user.id).order("received_at", {ascending:false}).limit(50),
-      client.from("withdrawal_requests").select("id,amount,payout_method,status,admin_note,created_at").eq("user_id", user.id).order("created_at", {ascending:false}).limit(30)
+      client.from("withdrawal_requests").select("id,amount,payout_method,status,admin_note,created_at,expires_at,paid_at,refunded_at").eq("user_id", user.id).order("created_at", {ascending:false}).limit(30)
     ]);
     const failed = [profileResult,ledgerResult,conversionResult,withdrawalResult].find(result => result.error);
     if (failed) throw failed.error;
@@ -163,6 +164,7 @@
 
     renderActivity(ledger, conversions, withdrawals);
     renderWithdrawals(withdrawals);
+    renderInbox(withdrawals);
     const offerResult = await client.from("offers").select("id,title,description,partner_name,destination_url,terms,created_at").eq("status","active").order("created_at",{ascending:false}).limit(30);
     renderOffers(offerResult.data || [], offerResult.error);
   }
@@ -199,6 +201,29 @@
       addText(info,"small","",dateText(item.created_at));
       if (item.admin_note) addText(info,"small","", "প্রশাসকের নোট: " + item.admin_note);
       row.appendChild(info); addText(row,"strong","",money(item.amount)); root.appendChild(row);
+    });
+  }
+
+  function renderInbox(withdrawals) {
+    const root = $("inbox-list");
+    if (!root) return;
+    root.replaceChildren();
+    if (!withdrawals.length) {
+      addText(root,"p","muted-message","এখনো কোনো পেমেন্ট বা উইথড্রের হিসাব নেই।");
+      return;
+    }
+    withdrawals.forEach(item => {
+      const row = document.createElement("div"); row.className = "data-row";
+      const info = document.createElement("div"); info.className = "data-row-info";
+      addText(info,"b","", (item.payout_method === "bkash" ? "বিকাশ" : "নগদ") + " · " + statusText(item.status));
+      addText(info,"small","", "অনুরোধ: " + dateText(item.created_at));
+      if (item.status === "pending" || item.status === "approved") addText(info,"small","","পেমেন্টের শেষ সময়: " + dateText(item.expires_at));
+      if (item.paid_at) addText(info,"small","","পেমেন্ট সম্পন্ন: " + dateText(item.paid_at));
+      if (item.refunded_at) addText(info,"small","","টাকা ফেরত: " + dateText(item.refunded_at));
+      if (item.admin_note) addText(info,"small","", "প্রশাসকের নোট: " + item.admin_note);
+      row.appendChild(info);
+      addText(row,"strong","",money(item.amount));
+      root.appendChild(row);
     });
   }
 
