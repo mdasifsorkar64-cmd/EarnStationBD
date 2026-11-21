@@ -142,7 +142,7 @@
     $("referral-count").textContent=Number(info.successful_referrals||0).toLocaleString("bn-BD");
     $("referral-total").textContent=money(info.total_bonus);
     $("referral-current-bonus").textContent=money(info.current_bonus);
-    const link=window.location.origin+"/auth.html?ref="+encodeURIComponent(code);
+    const inviteUrl=new URL("auth.html",window.location.href);inviteUrl.searchParams.set("ref",code);const link=inviteUrl.href;
     const copy=async value=>{try{await navigator.clipboard.writeText(value);$("referral-message").textContent="কপি হয়েছে। বন্ধুকে পাঠিয়ে দিন।";}catch(_){$("referral-message").textContent=value;}};
     $("copy-referral-code").onclick=()=>copy(code);
     $("copy-referral-link").onclick=()=>copy(link);
