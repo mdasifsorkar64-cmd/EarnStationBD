@@ -10,7 +10,7 @@ set search_path = public
 as $$
 begin
   new.full_name := btrim(coalesce(new.full_name, ''));
-  new.phone := regexp_replace(coalesce(new.phone, ''), '\\D', '', 'g');
+  new.phone := regexp_replace(coalesce(new.phone, ''), '\D', '', 'g');
 
   if new.full_name = '' then
     raise exception 'পূর্ণ নাম বাধ্যতামূলক।';
@@ -37,7 +37,7 @@ set search_path = public
 as $$
 declare
   v_name text := btrim(coalesce(new.raw_user_meta_data->>'full_name', ''));
-  v_phone text := regexp_replace(coalesce(new.raw_user_meta_data->>'phone', ''), '\\D', '', 'g');
+  v_phone text := regexp_replace(coalesce(new.raw_user_meta_data->>'phone', ''), '\D', '', 'g');
 begin
   if v_name = '' then
     raise exception 'পূর্ণ নাম দিয়ে নিবন্ধন করুন।';
