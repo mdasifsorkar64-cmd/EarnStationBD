@@ -18,7 +18,9 @@
       commissions: [],
       withdrawals: ["withdrawals"],
       inbox: ["inbox"],
-      profile: ["profile"],\n      referrals: ["referral-info"],\n      help: ["help-center"]
+      profile: ["profile"],
+      referrals: ["referral-info"],
+      help: ["help-center"]
     };
     const views = {};
     Object.keys(sections).forEach(key => {
@@ -133,7 +135,9 @@
   async function loadDashboard(user) {
     currentUser = user;
     $("member-email").textContent = user.email || "সদস্য অ্যাকাউন্ট";
-    $("profile-email").value = user.email || "";\n    const refreshButton = $("dashboard-refresh");\n    if (refreshButton) { refreshButton.disabled = true; refreshButton.classList.add("is-loading"); }
+    $("profile-email").value = user.email || "";
+    const refreshButton = $("dashboard-refresh");
+    if (refreshButton) { refreshButton.disabled = true; refreshButton.classList.add("is-loading"); }
     const [profileResult, ledgerResult, conversionResult, withdrawalResult] = await Promise.all([
       client.from("profiles").select("full_name,phone,created_at,role,account_status").eq("id", user.id).maybeSingle(),
       client.from("ledger_entries").select("id,entry_type,amount,description,created_at,is_test").eq("user_id", user.id).order("created_at", {ascending:false}).limit(50),
@@ -161,7 +165,23 @@
     const debits = ledger.filter(item => item.entry_type !== "credit").reduce((sum,item) => sum + Number(item.amount),0);
     const reserved = withdrawals.filter(item => ["pending","approved","paid"].includes(item.status)).reduce((sum,item) => sum + Number(item.amount),0);
     const approved = conversions.filter(item => item.status === "approved").reduce((sum,item) => sum + Number(item.commission_amount),0);
-    const pending = conversions.filter(item => item.status === "pending");\n    const todayStart = new Date(); todayStart.setHours(0,0,0,0);\n    const todayConversions = conversions.filter(item => item.received_at && new Date(item.received_at) >= todayStart);\n    $("today-conversions").textContent = todayConversions.length.toLocaleString("bn-BD");\n    $("today-approved").textContent = todayConversions.filter(item => item.status === "approved").length.toLocaleString("bn-BD");\n    $("today-pending").textContent = todayConversions.filter(item => item.status === "pending").length.toLocaleString("bn-BD");\n    $("daily-progress-date").textContent = new Date().toLocaleDateString("bn-BD",{day:"numeric",month:"short"});\n    const siteResult = await client.rpc("public_get_site_settings");\n    const site = !siteResult.error && Array.isArray(siteResult.data) ? siteResult.data[0] : null;\n    const notice = $("member-notice");\n    const noticeText = site?.announcement?.trim() || "";\n    notice.hidden = !noticeText;\n    if (noticeText) $("member-notice-text").textContent = noticeText;\n    const supportLink = $("support-email-link");\n    if (site?.contact_email) { supportLink.href = "mailto:" + site.contact_email + "?subject=" + encodeURIComponent("EarnStationBD সহায়তা"); supportLink.textContent = "ইমেইল করুন: " + site.contact_email; supportLink.classList.remove("offer-action-disabled"); supportLink.removeAttribute("aria-disabled"); }\n    else { supportLink.textContent = "যোগাযোগের ইমেইল এখনো যোগ করা হয়নি"; supportLink.setAttribute("aria-disabled","true"); }
+    const pending = conversions.filter(item => item.status === "pending");
+    const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+    const todayResult = await client.from("partner_conversions").select("id,status,received_at").eq("user_id",user.id).gte("received_at",todayStart.toISOString()).order("received_at",{ascending:false}).limit(500);
+    const todayConversions = todayResult.error ? conversions.filter(item => item.received_at && new Date(item.received_at) >= todayStart) : (todayResult.data || []);
+    $("today-conversions").textContent = (todayResult.error ? todayConversions.length.toLocaleString("bn-BD") + "+" : todayConversions.length.toLocaleString("bn-BD"));
+    $("today-approved").textContent = todayConversions.filter(item => item.status === "approved").length.toLocaleString("bn-BD");
+    $("today-pending").textContent = todayConversions.filter(item => item.status === "pending").length.toLocaleString("bn-BD");
+    $("daily-progress-date").textContent = new Date().toLocaleDateString("bn-BD",{day:"numeric",month:"short"});
+    const siteResult = await client.rpc("public_get_site_settings");
+    const site = !siteResult.error && Array.isArray(siteResult.data) ? siteResult.data[0] : null;
+    const notice = $("member-notice");
+    const noticeText = site?.announcement?.trim() || "";
+    notice.hidden = !noticeText;
+    if (noticeText) $("member-notice-text").textContent = noticeText;
+    const supportLink = $("support-email-link");
+    if (site?.contact_email) { supportLink.href = "mailto:" + site.contact_email + "?subject=" + encodeURIComponent("EarnStationBD সহায়তা"); supportLink.textContent = "ইমেইল করুন: " + site.contact_email; supportLink.classList.remove("offer-action-disabled"); supportLink.removeAttribute("aria-disabled"); }
+    else { supportLink.textContent = "যোগাযোগের ইমেইল এখনো যোগ করা হয়নি"; supportLink.setAttribute("aria-disabled","true"); }
     $("total-earned").textContent = money(credits);
     $("approved-commission").textContent = money(approved);
     currentAvailableBalance = Math.max(0, credits - debits - reserved);
@@ -306,7 +326,15 @@
     else window.location.replace("auth.html");
   });
 
-  setupSectionNavigation();\n  const refreshDashboard = $("dashboard-refresh");\n  if (refreshDashboard) refreshDashboard.addEventListener("click", async () => {\n    if (!currentUser) return;\n    refreshDashboard.disabled = true; refreshDashboard.classList.add("is-loading");\n    try { await loadDashboard(currentUser); }\n    catch (error) { showError(error.message || "তথ্য রিফ্রেশ করা যায়নি।"); }\n    finally { refreshDashboard.disabled = false; refreshDashboard.classList.remove("is-loading"); }\n  });
+  setupSectionNavigation();
+  const refreshDashboard = $("dashboard-refresh");
+  if (refreshDashboard) refreshDashboard.addEventListener("click", async () => {
+    if (!currentUser) return;
+    refreshDashboard.disabled = true; refreshDashboard.classList.add("is-loading");
+    try { await loadDashboard(currentUser); }
+    catch (error) { showError(error.message || "তথ্য রিফ্রেশ করা যায়নি।"); }
+    finally { refreshDashboard.disabled = false; refreshDashboard.classList.remove("is-loading"); }
+  });
 
   client.auth.onAuthStateChange((_event, session) => {
     if (!session) window.location.replace("auth.html");
