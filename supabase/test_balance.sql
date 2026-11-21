@@ -86,7 +86,7 @@ begin
   from public.platform_settings where id=true;
   if v_minimum is null then v_minimum := 100; end if;
   if p_amount < v_minimum then
-    raise exception 'Minimum withdrawal is ৳' || v_minimum::text;
+    raise exception 'Minimum withdrawal is ৳%', v_minimum;
   end if;
   if p_method not in ('bkash','nagad') then raise exception 'Unsupported payout method'; end if;
   if p_account_ciphertext is null or length(p_account_ciphertext) < 16 then
