@@ -116,3 +116,44 @@ revoke all on function public.public_get_site_settings() from public;
 grant execute on function public.public_get_site_settings() to anon, authenticated;
 
 notify pgrst,'reload schema';
+
+
+-- Admin-managed social/community links displayed publicly on the homepage
+alter table public.site_settings add column if not exists facebook_url text;
+alter table public.site_settings add column if not exists telegram_url text;
+alter table public.site_settings add column if not exists whatsapp_url text;
+alter table public.site_settings add column if not exists youtube_url text;
+
+create or replace function public.admin_get_community_links()
+returns table(facebook_url text,telegram_url text,whatsapp_url text,youtube_url text)
+language plpgsql security definer set search_path=public as $$
+begin
+ if not public.is_admin() then raise exception 'Admin access required'; end if;
+ return query select s.facebook_url,s.telegram_url,s.whatsapp_url,s.youtube_url from public.site_settings s where s.id=true;
+end; $$;
+
+create or replace function public.admin_update_community_links(
+ p_facebook_url text,p_telegram_url text,p_whatsapp_url text,p_youtube_url text
+) returns void language plpgsql security definer set search_path=public as $$
+declare v text;
+begin
+ if not public.is_admin() then raise exception 'Admin access required'; end if;
+ foreach v in array array[p_facebook_url,p_telegram_url,p_whatsapp_url,p_youtube_url] loop
+  if v is not null and (length(v)>500 or v !~ '^https://[^[:space:]]+$') then raise exception 'প্রতিটি লিংক অবশ্যই HTTPS URL হতে হবে'; end if;
+ end loop;
+ update public.site_settings set facebook_url=p_facebook_url,telegram_url=p_telegram_url,whatsapp_url=p_whatsapp_url,youtube_url=p_youtube_url,updated_at=now(),updated_by=auth.uid() where id=true;
+ insert into public.admin_audit_log(admin_id,action,details) values(auth.uid(),'community_links_updated',jsonb_build_object('facebook',p_facebook_url is not null,'telegram',p_telegram_url is not null,'whatsapp',p_whatsapp_url is not null,'youtube',p_youtube_url is not null));
+end; $$;
+
+create or replace function public.public_get_community_links()
+returns table(facebook_url text,telegram_url text,whatsapp_url text,youtube_url text)
+language sql security definer set search_path=public as $$
+ select s.facebook_url,s.telegram_url,s.whatsapp_url,s.youtube_url from public.site_settings s where s.id=true limit 1;
+$$;
+revoke all on function public.admin_get_community_links() from public;
+grant execute on function public.admin_get_community_links() to authenticated;
+revoke all on function public.admin_update_community_links(text,text,text,text) from public;
+grant execute on function public.admin_update_community_links(text,text,text,text) to authenticated;
+revoke all on function public.public_get_community_links() from public;
+grant execute on function public.public_get_community_links() to anon,authenticated;
+notify pgrst,'reload schema';
