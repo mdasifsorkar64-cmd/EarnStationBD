@@ -49,6 +49,21 @@
     finally{$("save-settings").disabled=false;}
   });
   $("refresh-settings").addEventListener("click",()=>loadSettings().catch(e=>message(e.message,true)));
+  async function loadReferralSettings(){
+    const {data,error}=await client.rpc("admin_get_referral_settings");if(error)throw error;
+    const row=Array.isArray(data)?data[0]:data;if(!row)throw new Error("রেফারেল সেটিংস পাওয়া যায়নি।");
+    $("referral-bonus-amount").value=row.bonus_amount;
+    $("referral-admin-stats").textContent="সফল রেফারেল: "+Number(row.successful_referrals||0).toLocaleString("bn-BD")+" · মোট বোনাস: ৳ "+Number(row.total_paid||0).toFixed(2);
+    $("referral-settings-status").textContent="রেফারেল সেটিংস লোড হয়েছে।";
+  }
+  $("referral-settings-form").addEventListener("submit",async event=>{
+    event.preventDefault();const amount=Number($("referral-bonus-amount").value);
+    if(!Number.isFinite(amount)||amount<0||amount>10000){$("referral-settings-status").textContent="০ থেকে ১০,০০০ টাকার মধ্যে পরিমাণ লিখুন।";return;}
+    $("save-referral-settings").disabled=true;
+    try{const {error}=await client.rpc("admin_update_referral_bonus",{p_bonus_amount:amount});if(error)throw error;await loadReferralSettings();message("রেফারেল কমিশন আপডেট হয়েছে।");}
+    catch(e){$("referral-settings-status").textContent=e.message||"রেফারেল বোনাস সংরক্ষণ হয়নি।";message(e.message||"রেফারেল বোনাস সংরক্ষণ হয়নি।",true);}
+    finally{$("save-referral-settings").disabled=false;}
+  });
   async function loadMembers(){
     $("members-list").textContent="সদস্য তালিকা লোড হচ্ছে...";
     const {data,error}=await client.rpc("admin_list_members",{p_search:$("member-search").value.trim()});
@@ -175,7 +190,7 @@
   }catch(e){$("site-status").textContent=e.message||"সংরক্ষণ করা যায়নি।";message(e.message||"সংরক্ষণ করা যায়নি।",true);}finally{$("save-site").disabled=false;}});
   $("refresh-site").addEventListener("click",()=>loadSiteSettings().catch(e=>message(e.message,true)));
 
-  async function refreshAll(){try{await Promise.all([loadMembers(),loadOffers(),loadConversions(),loadWithdrawals(),loadSettings(),loadSiteSettings()]);message("সব তথ্য আপডেট হয়েছে।");}catch(e){message(e.message||"তথ্য লোড করা যায়নি।",true);}}
+  async function refreshAll(){try{await Promise.all([loadMembers(),loadOffers(),loadConversions(),loadWithdrawals(),loadSettings(),loadSiteSettings(),loadReferralSettings()]);message("সব তথ্য আপডেট হয়েছে।");}catch(e){message(e.message||"তথ্য লোড করা যায়নি।",true);}}
   $("refresh-all").addEventListener("click",refreshAll);
   (async()=>{try{const {data,error}=await client.auth.getSession();if(error)throw error;if(!data.session){location.replace("auth.html");return;}const {data:profile,error:pe}=await client.from("profiles").select("role").eq("id",data.session.user.id).single();if(pe)throw pe;if(profile?.role!=="admin"){location.replace("dashboard.html");return;}
     $("admin-top").hidden=false;$("admin-content").hidden=false;$("admin-footer").hidden=false;message("অ্যাডমিন যাচাই সফল।");await refreshAll();
