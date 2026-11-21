@@ -2,8 +2,22 @@
 -- Run in Supabase SQL Editor after existing admin and earning migrations.
 
 alter table public.profiles add column if not exists account_status text not null default 'active';
+alter table public.platform_settings drop constraint if exists platform_settings_daily_ad_limit_check;
+alter table public.platform_settings add constraint platform_settings_daily_ad_limit_check check (daily_ad_limit between 0 and 200);
 alter table public.profiles drop constraint if exists profiles_account_status_check;
 alter table public.profiles add constraint profiles_account_status_check check (account_status in ('active','suspended'));
+
+create or replace function public.admin_update_platform_settings(
+ p_minimum_withdrawal numeric,p_ad_reward numeric,p_daily_ad_limit integer,p_ads_enabled boolean default false
+) returns void language plpgsql security definer set search_path=public as $
+begin
+ if not public.is_admin() then raise exception 'Admin access required'; end if;
+ if p_minimum_withdrawal is null or p_minimum_withdrawal < 1 then raise exception 'Minimum withdrawal must be at least 1'; end if;
+ if p_ad_reward is null or p_ad_reward < 0 then raise exception 'Invalid ad reward'; end if;
+ if p_daily_ad_limit is null or p_daily_ad_limit < 0 or p_daily_ad_limit > 200 then raise exception 'Daily ad limit must be between 0 and 200'; end if;
+ if coalesce(p_ads_enabled,false) then raise exception 'Verified ad provider callback required before enabling ads'; end if;
+ update public.platform_settings set minimum_withdrawal=p_minimum_withdrawal,ad_reward=p_ad_reward,daily_ad_limit=p_daily_ad_limit,ads_enabled=false,updated_at=now(),updated_by=auth.uid() where id=true;
+end; $;
 
 create table if not exists public.site_settings (
  id boolean primary key default true check(id=true),
