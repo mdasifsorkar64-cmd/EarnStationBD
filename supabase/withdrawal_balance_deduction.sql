@@ -35,6 +35,8 @@ declare
   v_user uuid := auth.uid();
   v_balance numeric(12,2);
   v_legacy_reserved numeric(12,2);
+  v_local_now timestamp;
+  v_today_count integer;
   v_id uuid;
 begin
   if v_user is null then raise exception 'Authentication required'; end if;
