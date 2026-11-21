@@ -5,6 +5,7 @@
   const profileForm = $("profile-form");
   const profileSave = $("profile-save");
   let currentUser = null;
+  let profileLocked = false;
   let currentAvailableBalance = 0;
   let latestWithdrawals = [];
 
@@ -186,6 +187,11 @@
     if (profile.account_status === "suspended") { await client.auth.signOut(); window.location.replace("auth.html?suspended=1"); throw new Error("এই অ্যাকাউন্টটি সাময়িকভাবে স্থগিত।"); }
     $("profile-name").value = profile.full_name || "";
     $("profile-phone").value = profile.phone || "";
+    profileLocked = profile.account_status === "active" || profile.role !== "member";
+    $("profile-name").disabled = profileLocked;
+    $("profile-phone").disabled = profileLocked;
+    profileSave.hidden = profileLocked;
+    if (profileLocked) setMessage("অ্যাকাউন্ট সক্রিয় হওয়ার পর নাম, ফোন নম্বরসহ কোনো প্রোফাইল তথ্য পরিবর্তন করা যাবে না।", "");
     const adminLink = $("admin-nav-link");
     if (adminLink) adminLink.hidden = profile.role !== "admin";
     const displayName = profile.full_name || "সদস্য";
@@ -309,6 +315,7 @@
   profileForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     if (!currentUser) return;
+    if (profileLocked) return setMessage("অ্যাকাউন্ট সক্রিয় হওয়ার পর প্রোফাইল তথ্য পরিবর্তন করা যাবে না।", "error");
     const fullName = $("profile-name").value.trim();
     const phone = $("profile-phone").value.trim();
     if (!fullName) return setMessage("আপনার পূর্ণ নাম লিখুন।","error");
