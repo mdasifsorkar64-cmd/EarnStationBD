@@ -6,6 +6,7 @@
   const profileSave = $("profile-save");
   let currentUser = null;
   let currentAvailableBalance = 0;
+  let latestWithdrawals = [];
 
   function setupSectionNavigation() {
     const main = document.querySelector(".dash-main");
@@ -194,6 +195,7 @@
     const ledger = ledgerResult.data || [];
     const conversions = conversionResult.data || [];
     const withdrawals = withdrawalResult.data || [];
+    latestWithdrawals = withdrawals;
     const credits = ledger.filter(item => item.entry_type === "credit").reduce((sum,item) => sum + Number(item.amount),0);
     const debits = ledger.filter(item => item.entry_type !== "credit").reduce((sum,item) => sum + Number(item.amount),0);
     // Withdrawal requests are debited from the ledger immediately. Refunds add a credit entry.
@@ -333,6 +335,26 @@
     const method=$("withdraw-method").value;
     const account=$("withdraw-account").value.replace(/[^0-9]/g,"");
     const amount=Number($("withdraw-amount").value);
+
+    // Bangladesh local time: withdrawals allowed 08:00–19:59, one request per local day.
+    const bdParts = new Intl.DateTimeFormat("en-GB", {
+      timeZone:"Asia/Dhaka", year:"numeric", month:"2-digit", day:"2-digit",
+      hour:"2-digit", minute:"2-digit", hourCycle:"h23"
+    }).formatToParts(new Date());
+    const bd = Object.fromEntries(bdParts.map(part => [part.type, part.value]));
+    const bdDate = bd.year + "-" + bd.month + "-" + bd.day;
+    const bdMinutes = Number(bd.hour) * 60 + Number(bd.minute);
+    if (bdMinutes < 480 || bdMinutes >= 1200)
+      return withdrawMessage("উইথড্র করার সময় সকাল ৮টা থেকে রাত ৮টা পর্যন্ত। এই সময়ের বাইরে উত্তোলন করা যাবে না।","error");
+    const alreadyToday = latestWithdrawals.some(item => {
+      const parts = new Intl.DateTimeFormat("en-GB", {
+        timeZone:"Asia/Dhaka", year:"numeric", month:"2-digit", day:"2-digit"
+      }).formatToParts(new Date(item.created_at));
+      const date = Object.fromEntries(parts.map(part => [part.type, part.value]));
+      return date.year + "-" + date.month + "-" + date.day === bdDate;
+    });
+    if (alreadyToday)
+      return withdrawMessage("আপনি আজ একবার উইথড্র করেছেন। দিনে মাত্র ১ বার উইথড্র করা যাবে। আগামীকাল সকাল ৮টার পর আবার চেষ্টা করুন।","error");
     if(!method) return withdrawMessage("বিকাশ অথবা নগদ অ্যাকাউন্টের ধরন নির্বাচন করুন।","error");
     if(!/^01[3-9][0-9]{8}$/.test(account)) return withdrawMessage("সঠিক ১১ সংখ্যার বাংলাদেশি মোবাইল নম্বর লিখুন।","error");
     if(!Number.isFinite(amount)||amount<=0) return withdrawMessage("সঠিক উত্তোলনের পরিমাণ লিখুন।","error");
