@@ -48,7 +48,7 @@
     }catch(e){$("settings-status").textContent=e.message||"সেটিংস সংরক্ষণ করা যায়নি。";message(e.message||"সেটিংস সংরক্ষণ করা যায়নি।",true);}
     finally{$("save-settings").disabled=false;}
   });
-  $("refresh-settings").addEventListener("click",()=>loadSettings().catch(e=>message(e.message,true)));
+  $("refresh-settings").addEventListener("click",()=>Promise.all([loadSettings(),loadReferralSettings()]).catch(e=>message(e.message,true)));
   async function loadReferralSettings(){
     const {data,error}=await client.rpc("admin_get_referral_settings");if(error)throw error;
     const row=Array.isArray(data)?data[0]:data;if(!row)throw new Error("রেফারেল সেটিংস পাওয়া যায়নি।");
