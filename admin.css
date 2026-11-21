@@ -48,3 +48,5 @@
 .admin-page .quick-actions button{display:flex;align-items:center;gap:9px;cursor:pointer}
 .admin-page .quick-actions button .admin-icon{width:18px;height:18px;color:#5364d8}
 @media(max-width:760px){.admin-page .admin-nav .admin-icon{width:19px;height:19px}.admin-page .admin-shield .shield-icon{width:39px;height:39px}}
+
+.referral-admin-panel{margin-top:18px}.referral-admin-panel .view-heading{margin-bottom:14px}.referral-admin-stats{padding:12px 14px;margin-top:12px;border-radius:10px;background:rgba(15,159,110,.08);font-weight:600}
