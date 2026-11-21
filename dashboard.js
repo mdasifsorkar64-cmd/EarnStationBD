@@ -166,8 +166,26 @@
     };
   }
 
+
+  // Update member presence while the dashboard tab is visible.
+  let presenceTimer = null;
+  async function sendPresenceHeartbeat() {
+    if (!currentUser || document.visibilityState !== "visible") return;
+    const { error } = await client.rpc("member_presence_heartbeat");
+    if (error) console.warn("Presence heartbeat:", error.message);
+  }
+  function startPresenceHeartbeat() {
+    if (presenceTimer) clearInterval(presenceTimer);
+    sendPresenceHeartbeat();
+    presenceTimer = setInterval(sendPresenceHeartbeat, 30000);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") sendPresenceHeartbeat();
+    });
+  }
+
   async function loadDashboard(user) {
     currentUser = user;
+    startPresenceHeartbeat();
     try { await client.rpc("claim_referral_bonus"); } catch (e) { console.warn("Referral bonus check:", e.message); }
     $("member-email").textContent = user.email || "সদস্য অ্যাকাউন্ট";
     $("profile-email").value = user.email || "";
