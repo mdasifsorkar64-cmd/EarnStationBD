@@ -10,6 +10,10 @@
   function showView(name){document.querySelectorAll(".admin-view").forEach(v=>v.classList.toggle("active",v.id==="view-"+name));document.querySelectorAll(".admin-nav").forEach(v=>v.classList.toggle("active",v.dataset.view===name));}
   document.querySelectorAll(".admin-nav").forEach(b=>b.addEventListener("click",()=>showView(b.dataset.view)));
   document.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>showView(b.dataset.go)));
+  const membersStatCard=$("members-stat-card");
+  const openMembersFromStat=()=>{showView("members");$("member-search").value="";loadMembers().catch(e=>message(e.message||"সদস্য তালিকা লোড করা যায়নি।",true));};
+  membersStatCard.addEventListener("click",openMembersFromStat);
+  membersStatCard.addEventListener("keydown",event=>{if(event.key==="Enter"||event.key===" "){event.preventDefault();openMembersFromStat();}});
   async function loadSettings(){
     $("settings-status").textContent="সেটিংস লোড হচ্ছে...";
     const {data,error}=await client.rpc("admin_get_platform_settings");
