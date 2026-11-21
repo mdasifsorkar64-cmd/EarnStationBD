@@ -44,6 +44,23 @@ begin
 
   perform pg_advisory_xact_lock(hashtextextended(v_user::text,0));
 
+  -- Bangladesh Standard Time (Asia/Dhaka): allow from 08:00 up to 19:59.
+  v_local_now := timezone('Asia/Dhaka', now());
+  if v_local_now::time < time '08:00'
+     or v_local_now::time >= time '20:00' then
+    raise exception 'উইথড্রের সময় সকাল ৮টা থেকে রাত ৮টা পর্যন্ত। বাংলাদেশ সময় অনুযায়ী এই সময়ের বাইরে উত্তোলন করা যাবে না।';
+  end if;
+
+  -- One withdrawal request per Bangladesh calendar day, regardless of request status.
+  select count(*) into v_today_count
+  from public.withdrawal_requests w
+  where w.user_id = v_user
+    and (w.created_at at time zone 'Asia/Dhaka')::date = v_local_now::date;
+
+  if v_today_count >= 1 then
+    raise exception 'আপনি আজ একবার উইথড্র করেছেন। দিনে মাত্র ১ বার উইথড্র করা যাবে। আগামীকাল সকাল ৮টার পর আবার চেষ্টা করুন।';
+  end if;
+
   select coalesce(sum(case when entry_type='credit' then amount else -amount end),0)
     into v_balance from public.ledger_entries where user_id=v_user;
 
