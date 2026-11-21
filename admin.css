@@ -50,3 +50,10 @@
 @media(max-width:760px){.admin-page .admin-nav .admin-icon{width:19px;height:19px}.admin-page .admin-shield .shield-icon{width:39px;height:39px}}
 
 .referral-admin-panel{margin-top:18px}.referral-admin-panel .view-heading{margin-bottom:14px}.referral-admin-stats{padding:12px 14px;margin-top:12px;border-radius:10px;background:rgba(15,159,110,.08);font-weight:600}
+
+/* Member role and presence shown together in directory cards */
+.member-status-stack{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0}
+.presence-badge{font-size:10px;font-weight:800;white-space:nowrap}
+.presence-badge.is-online{color:#0b9b68}
+.presence-badge.is-offline{color:#8992a8}
+.member-presence-note{margin:-2px 0 14px;padding:0 2px}
