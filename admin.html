@@ -40,6 +40,12 @@
 <section class="admin-view" id="view-members">
 <div class="view-heading"><div><p>USER DIRECTORY</p><h2>সদস্য ব্যবস্থাপনা</h2><span>সদস্যের পরিচয় ও অ্যাকাউন্ট কার্যক্রম</span></div><button class="secondary" id="refresh-members">↻ রিফ্রেশ</button></div>
 <div class="admin-panel">
+<div class="admin-heading"><h3>সদস্যদের অনলাইন অবস্থা</h3><button type="button" class="secondary" id="refresh-presence">↻ আপডেট</button></div>
+<div id="presence-summary" class="admin-help">লাইভ অবস্থা লোড হচ্ছে...</div>
+<div id="presence-list" class="admin-list">অবস্থা লোড হচ্ছে...</div>
+<p class="admin-help">সদস্যের ড্যাশবোর্ড খোলা ও সক্রিয় ট্যাব থাকলে অনলাইন দেখাবে। ট্যাব বন্ধ বা দীর্ঘক্ষণ ব্যাকগ্রাউন্ডে থাকলে ৯০ সেকেন্ডের মধ্যে অফলাইন হবে।</p>
+</div>
+<div class="admin-panel">
 <div class="search-row"><input id="member-search" type="search" placeholder="নাম, ইমেইল, ফোন বা User ID দিয়ে খুঁজুন"><span id="member-count">লোড হচ্ছে...</span></div>
 <div id="members-list" class="admin-list">সদস্য তালিকা লোড হচ্ছে...</div>
 <p class="admin-help">দেখানো তথ্য: User ID, ইমেইল, নাম, ফোন, ভূমিকা, নিবন্ধনের তারিখ ও সর্বশেষ লগইন। পাসওয়ার্ড/OTP/সেশন টোকেন দেখানো হয় না।</p>
