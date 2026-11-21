@@ -123,9 +123,9 @@
     $("profile-email").value = user.email || "";
     const [profileResult, ledgerResult, conversionResult, withdrawalResult] = await Promise.all([
       client.from("profiles").select("full_name,phone,created_at,role,account_status").eq("id", user.id).maybeSingle(),
-      client.from("ledger_entries").select("id,entry_type,amount,description,created_at").eq("user_id", user.id).order("created_at", {ascending:false}).limit(50),
+      client.from("ledger_entries").select("id,entry_type,amount,description,created_at,is_test").eq("user_id", user.id).order("created_at", {ascending:false}).limit(50),
       client.from("partner_conversions").select("id,partner_name,commission_amount,status,received_at").eq("user_id", user.id).order("received_at", {ascending:false}).limit(50),
-      client.from("withdrawal_requests").select("id,amount,payout_method,status,admin_note,created_at,expires_at,paid_at,refunded_at").eq("user_id", user.id).order("created_at", {ascending:false}).limit(30)
+      client.from("withdrawal_requests").select("id,amount,payout_method,status,admin_note,created_at,expires_at,paid_at,refunded_at,is_test").eq("user_id", user.id).order("created_at", {ascending:false}).limit(30)
     ]);
     const failed = [profileResult,ledgerResult,conversionResult,withdrawalResult].find(result => result.error);
     if (failed) throw failed.error;
@@ -172,9 +172,9 @@
 
   function renderActivity(ledger, conversions, withdrawals) {
     const items = [
-      ...ledger.map(item => ({date:item.created_at, title:item.description || "লেনদেন", detail:item.entry_type === "credit" ? "জমা" : "সমন্বয়/কর্তন", amount:(item.entry_type === "credit" ? "+" : "−") + money(item.amount), positive:item.entry_type === "credit"})),
+      ...ledger.map(item => ({date:item.created_at, title:item.description || "লেনদেন", detail:item.is_test ? "পরীক্ষামূলক জমা (বাস্তব অর্থ নয়)" : (item.entry_type === "credit" ? "জমা" : "সমন্বয়/কর্তন"), amount:(item.entry_type === "credit" ? "+" : "−") + money(item.amount), positive:item.entry_type === "credit"})),
       ...conversions.map(item => ({date:item.received_at, title:"পার্টনার কনভার্সন", detail:safe(item.partner_name) + " · " + statusText(item.status), amount:money(item.commission_amount), positive:item.status === "approved"})),
-      ...withdrawals.map(item => ({date:item.created_at, title:"উত্তোলনের অনুরোধ", detail:(item.payout_method === "bkash" ? "বিকাশ" : "নগদ") + " · " + statusText(item.status), amount:"−" + money(item.amount), positive:false}))
+      ...withdrawals.map(item => ({date:item.created_at, title:item.is_test ? "পরীক্ষামূলক উত্তোলনের অনুরোধ" : "উত্তোলনের অনুরোধ", detail:(item.payout_method === "bkash" ? "বিকাশ" : "নগদ") + " · " + statusText(item.status), amount:"−" + money(item.amount), positive:false}))
     ].sort((a,b) => new Date(b.date || 0) - new Date(a.date || 0)).slice(0,10);
     const root = $("activity-list");
     root.replaceChildren();
@@ -198,8 +198,9 @@
     withdrawals.forEach(item => {
       const row = document.createElement("div"); row.className="data-row";
       const info = document.createElement("div"); info.className="data-row-info";
-      addText(info,"b","", (item.payout_method === "bkash" ? "বিকাশ" : "নগদ") + " · " + statusText(item.status));
+      addText(info,"b","", (item.is_test ? "TEST · পরীক্ষামূলক · " : "") + (item.payout_method === "bkash" ? "বিকাশ" : "নগদ") + " · " + statusText(item.status));
       addText(info,"small","",dateText(item.created_at));
+      if (item.is_test) addText(info,"small","","পরীক্ষামূলক অনুরোধ—বাস্তব পেমেন্ট নয়। ৫ ঘণ্টা পরে স্বয়ংক্রিয় ফেরত হবে।");
       if (item.admin_note) addText(info,"small","", "প্রশাসকের নোট: " + item.admin_note);
       row.appendChild(info); addText(row,"strong","",money(item.amount)); root.appendChild(row);
     });
