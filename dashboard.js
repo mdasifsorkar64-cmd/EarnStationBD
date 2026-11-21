@@ -36,6 +36,19 @@
     if (cards[1]) views.commissions.appendChild(cards[1]);
     if (cards[2]) views.withdrawals.insertBefore(cards[2], $("withdrawals"));
     if (stats) stats.remove();
+    const quickRoutes = ["earnings", "commissions", "withdrawals", "earnings"];
+    cards.forEach((card, index) => {
+      const target = quickRoutes[index];
+      if (!target) return;
+      card.setAttribute("role", "button");
+      card.setAttribute("tabindex", "0");
+      card.setAttribute("aria-label", card.querySelector("small")?.textContent + " বিস্তারিত দেখুন");
+      const openTarget = () => activate(target);
+      card.addEventListener("click", openTarget);
+      card.addEventListener("keydown", event => {
+        if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openTarget(); }
+      });
+    });
     function activate(key) {
       if (!views[key]) key = "overview";
       Object.entries(views).forEach(([name, view]) => view.classList.toggle("active", name === key));
