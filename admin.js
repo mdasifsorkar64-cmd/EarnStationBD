@@ -8,16 +8,19 @@
   const el=(tag,cls,txt)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(txt!==undefined)n.textContent=txt;return n;};
   const button=(label,action,cls="")=>{const b=el("button","status-button "+cls,label);b.type="button";b.addEventListener("click",()=>Promise.resolve().then(action).catch(e=>message(e.message||"কাজটি সম্পন্ন হয়নি।",true)));return b;};
   function showView(name){document.querySelectorAll(".admin-view").forEach(v=>v.classList.toggle("active",v.id==="view-"+name));document.querySelectorAll(".admin-nav").forEach(v=>v.classList.toggle("active",v.dataset.view===name));}
-  document.querySelectorAll(".admin-nav").forEach(b=>b.addEventListener("click",()=>showView(b.dataset.view)));
-  document.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>showView(b.dataset.go)));
+  function navigateView(name){if(!document.getElementById("view-"+name))return;history.pushState({adminView:name},"","#admin-"+name);showView(name);}
+  history.replaceState({adminView:"overview"},"","#admin-overview");
+  window.addEventListener("popstate",event=>showView(event.state?.adminView||"overview"));
+  document.querySelectorAll(".admin-nav").forEach(b=>b.addEventListener("click",()=>navigateView(b.dataset.view)));
+  document.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>navigateView(b.dataset.go)));
   const membersStatCard=$("members-stat-card");
-  const openMembersFromStat=()=>{showView("members");$("member-search").value="";loadMembers().catch(e=>message(e.message||"সদস্য তালিকা লোড করা যায়নি।",true));};
+  const openMembersFromStat=()=>{navigateView("members");$("member-search").value="";loadMembers().catch(e=>message(e.message||"সদস্য তালিকা লোড করা যায়নি।",true));};
   membersStatCard.addEventListener("click",openMembersFromStat);
   membersStatCard.addEventListener("keydown",event=>{if(event.key==="Enter"||event.key===" "){event.preventDefault();openMembersFromStat();}});
   const statCardActions={
-    "offers-stat-card":()=>{showView("offers");loadOffers().catch(e=>message(e.message||"অফার তালিকা লোড হয়নি।",true));},
-    "pending-stat-card":()=>{showView("conversions");loadConversions().catch(e=>message(e.message||"কমিশন তালিকা লোড হয়নি।",true));},
-    "withdrawals-stat-card":()=>{showView("withdrawals");loadWithdrawals().catch(e=>message(e.message||"উত্তোলন তালিকা লোড হয়নি।",true));}
+    "offers-stat-card":()=>{navigateView("offers");loadOffers().catch(e=>message(e.message||"অফার তালিকা লোড হয়নি।",true));},
+    "pending-stat-card":()=>{navigateView("conversions");loadConversions().catch(e=>message(e.message||"কমিশন তালিকা লোড হয়নি।",true));},
+    "withdrawals-stat-card":()=>{navigateView("withdrawals");loadWithdrawals().catch(e=>message(e.message||"উত্তোলন তালিকা লোড হয়নি।",true));}
   };
   Object.entries(statCardActions).forEach(([id,action])=>{const card=$(id);card.addEventListener("click",action);card.addEventListener("keydown",event=>{if(event.key==="Enter"||event.key===" "){event.preventDefault();action();}});});
   async function loadSettings(){
