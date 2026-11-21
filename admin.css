@@ -25,3 +25,6 @@
 @media(max-width:520px){.admin-wrap{margin:14px auto}.admin-hero{padding:20px}.admin-hero h1{font-size:23px}.admin-shield{font-size:38px}.admin-panel{padding:14px}.admin-form{grid-template-columns:1fr}.admin-form label{grid-column:1/-1}.admin-row{align-items:flex-start;flex-direction:column}.admin-row-actions{justify-content:flex-start}.member-meta{grid-template-columns:1fr}.view-heading h2{font-size:18px}.search-row{align-items:stretch;flex-direction:column}}
 
 .settings-toggle{grid-column:1/-1;display:flex!important;flex-direction:row!important;align-items:center;gap:10px!important;padding:12px;border:1px solid #e0e7f5;border-radius:10px;background:#f8f9ff}.settings-toggle input{width:18px;height:18px;flex:none}.admin-form label.settings-toggle{font-size:11px}
+
+.stat-card-clickable{cursor:pointer;}
+.stat-card-clickable:focus-visible{outline:3px solid var(--accent,#6c7cff);outline-offset:3px;}
