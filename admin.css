@@ -26,5 +26,6 @@
 
 .settings-toggle{grid-column:1/-1;display:flex!important;flex-direction:row!important;align-items:center;gap:10px!important;padding:12px;border:1px solid #e0e7f5;border-radius:10px;background:#f8f9ff}.settings-toggle input{width:18px;height:18px;flex:none}.admin-form label.settings-toggle{font-size:11px}
 
-.stat-card-clickable{cursor:pointer;}
+ .stat-card-clickable{cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;}
+.stat-card-clickable:hover{transform:translateY(-2px);box-shadow:0 12px 24px #27376f18;}
 .stat-card-clickable:focus-visible{outline:3px solid var(--accent,#6c7cff);outline-offset:3px;}
