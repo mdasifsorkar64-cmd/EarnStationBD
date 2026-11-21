@@ -17,3 +17,16 @@
 
 /* Rewarded ads placeholder until a verified ad provider is connected */
 #ad-center .empty-state{max-width:620px;margin:auto}#ad-center .empty-icon{background:linear-gradient(135deg,#e3edff,#efe6ff)}
+
+/* Member dashboard premium polish and accessible quick-stat navigation */
+.dash-topbar{position:sticky;top:0;z-index:20;backdrop-filter:blur(14px)}
+.welcome-banner{background-image:radial-gradient(circle at 82% 20%,rgba(255,255,255,.16),transparent 28%),linear-gradient(115deg,#2630c7,#5425cf 65%,#8135d5)}
+.panel,.stat-card{transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease}
+.stat-card[role="button"]{cursor:pointer;outline:none}
+.stat-card[role="button"]:hover{transform:translateY(-3px);border-color:#cbd7fa;box-shadow:0 15px 32px rgba(39,55,111,.11)}
+.stat-card[role="button"]:focus-visible{outline:3px solid #7198ff;outline-offset:3px}
+.panel-head{flex-wrap:wrap}
+.activity-row:hover,.data-row:hover{background:linear-gradient(90deg,rgba(235,241,255,.45),transparent);border-radius:10px}
+.profile-panel .verified-tag{white-space:nowrap}
+@media(max-width:760px){.dash-topbar{position:sticky;top:0;z-index:20}.welcome-banner{border-radius:18px}.panel{padding:16px}.panel-head h2{font-size:15px}.dash-footer{text-align:center}}
+@media(prefers-reduced-motion:reduce){.stat-card,.panel{transition:none!important}}
