@@ -6,6 +6,9 @@
   const confirmPassword = document.getElementById("confirm-password");
   const fullName = document.getElementById("full-name");
   const phone = document.getElementById("phone");
+  const referralCode = document.getElementById("referral-code");
+  const referralGroup = document.getElementById("referral-group");
+  const referralFromLink = new URLSearchParams(window.location.search).get("ref") || "";
   const message = document.getElementById("auth-message");
   const submit = document.getElementById("submit-button");
   const loginTab = document.getElementById("show-login");
@@ -29,6 +32,8 @@
     signupTab.setAttribute("aria-selected", String(signup));
     document.getElementById("name-group").hidden = !signup;
     document.getElementById("phone-group").hidden = !signup;
+    if (referralGroup) referralGroup.hidden = !signup;
+    if (signup && referralCode && referralFromLink && !referralCode.value) referralCode.value = referralFromLink.toUpperCase().slice(0,10);
     phone.required = signup;
     document.getElementById("confirm-group").hidden = !signup;
     fullName.required = signup;
@@ -72,7 +77,7 @@
         const { data, error } = await client.auth.signUp({
           ...credentials,
           options: {
-            data: { full_name: fullName.value.trim(), phone: phone.value.replace(/\D/g, "") },
+            data: { full_name: fullName.value.trim(), phone: phone.value.replace(/\D/g, ""), referral_code: (referralCode?.value || "").trim().toUpperCase() },
             emailRedirectTo: window.location.origin + "/dashboard.html"
           }
         });
