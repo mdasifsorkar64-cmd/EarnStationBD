@@ -14,6 +14,12 @@
   const openMembersFromStat=()=>{showView("members");$("member-search").value="";loadMembers().catch(e=>message(e.message||"সদস্য তালিকা লোড করা যায়নি।",true));};
   membersStatCard.addEventListener("click",openMembersFromStat);
   membersStatCard.addEventListener("keydown",event=>{if(event.key==="Enter"||event.key===" "){event.preventDefault();openMembersFromStat();}});
+  const statCardActions={
+    "offers-stat-card":()=>{showView("offers");loadOffers().catch(e=>message(e.message||"অফার তালিকা লোড হয়নি।",true));},
+    "pending-stat-card":()=>{showView("conversions");loadConversions().catch(e=>message(e.message||"কমিশন তালিকা লোড হয়নি।",true));},
+    "withdrawals-stat-card":()=>{showView("withdrawals");loadWithdrawals().catch(e=>message(e.message||"উত্তোলন তালিকা লোড হয়নি।",true));}
+  };
+  Object.entries(statCardActions).forEach(([id,action])=>{const card=$(id);card.addEventListener("click",action);card.addEventListener("keydown",event=>{if(event.key==="Enter"||event.key===" "){event.preventDefault();action();}});});
   async function loadSettings(){
     $("settings-status").textContent="সেটিংস লোড হচ্ছে...";
     const {data,error}=await client.rpc("admin_get_platform_settings");
