@@ -3,7 +3,7 @@ create table if not exists public.platform_settings (
   id boolean primary key default true check (id = true),
   minimum_withdrawal numeric(12,2) not null default 100 check (minimum_withdrawal >= 1),
   ad_reward numeric(12,2) not null default 0.10 check (ad_reward >= 0),
-  daily_ad_limit integer not null default 5 check (daily_ad_limit between 0 and 100),
+  daily_ad_limit integer not null default 5 check (daily_ad_limit between 0 and 200),
   ads_enabled boolean not null default false,
   updated_at timestamptz not null default now(),
   updated_by uuid references auth.users(id)
@@ -34,7 +34,7 @@ begin
   if not public.is_admin() then raise exception 'Admin access required'; end if;
   if p_minimum_withdrawal is null or p_minimum_withdrawal < 1 then raise exception 'Minimum withdrawal must be at least 1'; end if;
   if p_ad_reward is null or p_ad_reward < 0 then raise exception 'Invalid ad reward'; end if;
-  if p_daily_ad_limit is null or p_daily_ad_limit < 0 or p_daily_ad_limit > 100 then raise exception 'Daily ad limit must be between 0 and 100'; end if;
+  if p_daily_ad_limit is null or p_daily_ad_limit < 0 or p_daily_ad_limit > 200 then raise exception 'Daily ad limit must be between 0 and 200'; end if;
   if coalesce(p_ads_enabled,false) then raise exception 'A verified rewarded-ad provider callback is required before enabling ads'; end if;
   update public.platform_settings
   set minimum_withdrawal=p_minimum_withdrawal, ad_reward=p_ad_reward,
