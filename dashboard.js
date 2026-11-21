@@ -132,8 +132,25 @@
     });
   }
 
+  async function loadReferralInfo() {
+    const {data,error}=await client.rpc("get_my_referral_summary");
+    if(error)throw error;
+    const info=Array.isArray(data)?data[0]:data;
+    if(!info)throw new Error("রেফারেল তথ্য পাওয়া যায়নি।");
+    const code=String(info.referral_code||"");
+    $("my-referral-code").textContent=code||"কোড তৈরি হয়নি";
+    $("referral-count").textContent=Number(info.successful_referrals||0).toLocaleString("bn-BD");
+    $("referral-total").textContent=money(info.total_bonus);
+    $("referral-current-bonus").textContent=money(info.current_bonus);
+    const link=window.location.origin+"/auth.html?ref="+encodeURIComponent(code);
+    const copy=async value=>{try{await navigator.clipboard.writeText(value);$("referral-message").textContent="কপি হয়েছে। বন্ধুকে পাঠিয়ে দিন।";}catch(_){$("referral-message").textContent=value;}};
+    $("copy-referral-code").onclick=()=>copy(code);
+    $("copy-referral-link").onclick=()=>copy(link);
+  }
+
   async function loadDashboard(user) {
     currentUser = user;
+    try { await client.rpc("claim_referral_bonus"); } catch (e) { console.warn("Referral bonus check:", e.message); }
     $("member-email").textContent = user.email || "সদস্য অ্যাকাউন্ট";
     $("profile-email").value = user.email || "";
     const refreshButton = $("dashboard-refresh");
@@ -197,6 +214,7 @@
     alert.querySelector(".alert-check").textContent = "✓";
 
     renderActivity(ledger, conversions, withdrawals);
+    await loadReferralInfo();
     renderWithdrawals(withdrawals);
     renderInbox(withdrawals);
     const offerResult = await client.from("offers").select("id,title,description,partner_name,destination_url,terms,created_at").eq("status","active").order("created_at",{ascending:false}).limit(30);
