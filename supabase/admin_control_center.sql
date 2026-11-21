@@ -92,3 +92,27 @@ revoke all on function public.admin_get_audit_log() from public;
 grant execute on function public.admin_get_audit_log() to authenticated;
 
 notify pgrst,'reload schema';
+
+
+-- Public read-only website configuration for the homepage
+create or replace function public.public_get_site_settings()
+returns table(
+ site_name text,
+ site_tagline text,
+ announcement text,
+ contact_email text
+)
+language sql
+security definer
+set search_path=public
+as $$
+ select s.site_name,s.site_tagline,s.announcement,s.contact_email
+ from public.site_settings s
+ where s.id=true
+ limit 1;
+$$;
+
+revoke all on function public.public_get_site_settings() from public;
+grant execute on function public.public_get_site_settings() to anon, authenticated;
+
+notify pgrst,'reload schema';
