@@ -122,7 +122,7 @@
     $("member-email").textContent = user.email || "সদস্য অ্যাকাউন্ট";
     $("profile-email").value = user.email || "";
     const [profileResult, ledgerResult, conversionResult, withdrawalResult] = await Promise.all([
-      client.from("profiles").select("full_name,phone,created_at,role").eq("id", user.id).maybeSingle(),
+      client.from("profiles").select("full_name,phone,created_at,role,account_status").eq("id", user.id).maybeSingle(),
       client.from("ledger_entries").select("id,entry_type,amount,description,created_at").eq("user_id", user.id).order("created_at", {ascending:false}).limit(50),
       client.from("partner_conversions").select("id,partner_name,commission_amount,status,received_at").eq("user_id", user.id).order("received_at", {ascending:false}).limit(50),
       client.from("withdrawal_requests").select("id,amount,payout_method,status,admin_note,created_at,expires_at,paid_at,refunded_at").eq("user_id", user.id).order("created_at", {ascending:false}).limit(30)
@@ -132,6 +132,7 @@
 
     const profile = profileResult.data;
     if (!profile) throw new Error("আপনার সদস্য প্রোফাইল পাওয়া যায়নি। সহায়তার জন্য প্রশাসকের সঙ্গে যোগাযোগ করুন।");
+    if (profile.account_status === "suspended") { await client.auth.signOut(); window.location.replace("auth.html?suspended=1"); throw new Error("এই অ্যাকাউন্টটি সাময়িকভাবে স্থগিত।"); }
     $("profile-name").value = profile.full_name || "";
     $("profile-phone").value = profile.phone || "";
     const adminLink = $("admin-nav-link");
