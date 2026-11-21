@@ -83,7 +83,7 @@ const server = http.createServer(async (req, res) => {
       await requireAdmin(authorization);
       if (isAdminList) {
         const headers = { apikey: SUPABASE_ANON_KEY, Authorization: authorization };
-        const wr = await fetch(BASE() + "/rest/v1/withdrawal_requests?select=id,user_id,amount,payout_method,payout_account_ciphertext,status,admin_note,created_at,expires_at,paid_at,refunded_at&order=created_at.desc&limit=100", { headers });
+        const wr = await fetch(BASE() + "/rest/v1/withdrawal_requests?select=id,user_id,amount,payout_method,payout_account_ciphertext,status,is_test,admin_note,created_at,expires_at,paid_at,refunded_at&order=created_at.desc&limit=100", { headers });
         const withdrawals = await wr.json();
         if (!wr.ok) return json(res, 400, { error: "উইথড্র তালিকা লোড করা যায়নি।" });
         const ids = [...new Set(withdrawals.map(x => x.user_id))];
@@ -96,7 +96,7 @@ const server = http.createServer(async (req, res) => {
         const byId = new Map(profiles.map(p => [p.id, p]));
         const result = withdrawals.map(w => ({
           id: w.id, user_id: w.user_id, amount: w.amount, payout_method: w.payout_method,
-          payout_account: decryptAccount(w.payout_account_ciphertext), status: w.status,
+          payout_account: decryptAccount(w.payout_account_ciphertext), status: w.status, is_test: !!w.is_test,
           admin_note: w.admin_note, created_at: w.created_at, expires_at: w.expires_at,
           paid_at: w.paid_at, refunded_at: w.refunded_at, member: byId.get(w.user_id) || {}
         }));
