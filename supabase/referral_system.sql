@@ -12,6 +12,26 @@ create table if not exists public.referral_rewards(id uuid primary key default g
 create index if not exists referral_rewards_referrer_idx on public.referral_rewards(referrer_id,created_at desc);
 alter table public.referral_rewards enable row level security;
 
+-- Referral code and inviter are immutable after signup; prevents client-side attribution tampering.
+create or replace function public.protect_referral_attribution()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $
+begin
+  if old.referral_code is distinct from new.referral_code
+     or old.referred_by is distinct from new.referred_by then
+    raise exception 'রেফারেল কোড ও আমন্ত্রণকারীর তথ্য পরিবর্তন করা যাবে না।';
+  end if;
+  return new;
+end;
+$;
+drop trigger if exists protect_referral_attribution on public.profiles;
+create trigger protect_referral_attribution
+before update on public.profiles
+for each row execute function public.protect_referral_attribution();
+
 create or replace function public.handle_new_user() returns trigger language plpgsql security definer set search_path=public as $$
 declare
  v_name text:=btrim(coalesce(new.raw_user_meta_data->>'full_name',''));
