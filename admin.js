@@ -42,6 +42,7 @@
     const ids=(data||[]).map(m=>m.id);const states=ids.length?await client.from("profiles").select("id,account_status").in("id",ids):{data:[],error:null};if(states.error)throw states.error;
     const stateMap=new Map((states.data||[]).map(x=>[x.id,x.account_status]));(data||[]).forEach(m=>m.account_status=stateMap.get(m.id)||"active");
     $("member-count").textContent=(data?.length||0)+" জন সদস্য";
+    if(!$("member-search").value.trim()) $("stat-members").textContent=String(data?.length||0);
     const root=$("members-list");root.replaceChildren();
     if(!data?.length){root.textContent="কোনো সদস্য পাওয়া যায়নি।";return;}
     data.forEach(m=>{
