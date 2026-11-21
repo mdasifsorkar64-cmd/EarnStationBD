@@ -99,15 +99,20 @@
         el("small","","উইথড্রের সময়: "+fmt(w.created_at)+" · শেষ সময়: "+fmt(w.expires_at))
       );
       if(w.paid_at) info.append(el("small","","পেমেন্ট সম্পন্ন: "+fmt(w.paid_at)));
+      if(w.payment_transaction_id) info.append(el("small","","Transaction ID: "+w.payment_transaction_id));
       if(w.refunded_at) info.append(el("small","","টাকা ফেরত: "+fmt(w.refunded_at)));
       if(w.admin_note) info.append(el("small","","নোট: "+w.admin_note));
       if(w.is_test) info.append(el("small","","এটি পরীক্ষামূলক অনুরোধ—বাস্তব পেমেন্ট নিষিদ্ধ। ৫ ঘণ্টা পরে স্বয়ংক্রিয়ভাবে REFUNDED হবে।"));
       row.append(info);
       if(!w.is_test && ["pending","approved"].includes(w.status)){
         row.append(button("টাকা পাঠিয়েছি · SUCCESS করুন",async()=>{
-          if(!confirm("সদস্যকে বিকাশ/নগদে "+money(w.amount)+" সত্যিই পাঠানো হয়েছে কি? টাকা পাঠানোর পরই শুধু SUCCESS করুন।"))return;
+          const transactionId=prompt("বিকাশ/নগদে "+money(w.amount)+" পাঠানোর পর প্রাপ্ত Transaction ID লিখুন:");
+          if(transactionId===null)return;
+          const cleanTransactionId=transactionId.trim();
+          if(cleanTransactionId.length<4||cleanTransactionId.length>100){throw new Error("সঠিক Transaction ID লিখুন (৪–১০০ অক্ষর)।");}
+          if(!confirm("সদস্যকে "+money(w.amount)+" সত্যিই পাঠানো হয়েছে এবং Transaction ID "+cleanTransactionId+" সঠিক? শুধু টাকা পাঠানোর পর SUCCESS করুন।"))return;
           const {data:{session:active}}=await client.auth.getSession();
-          const res=await fetch("http://127.0.0.1:3001/api/admin/withdrawals/complete",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+active.access_token},body:JSON.stringify({withdrawal_id:w.id})});
+          const res=await fetch("http://127.0.0.1:3001/api/admin/withdrawals/complete",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+active.access_token},body:JSON.stringify({withdrawal_id:w.id,transaction_id:cleanTransactionId})});
           const out=await res.json();if(!res.ok)throw new Error(out.error||"স্ট্যাটাস আপডেট হয়নি।");
           message(out.status==="refunded"?"৫ ঘণ্টা পার হয়েছে—টাকা সদস্যকে ফেরত দেওয়া হয়েছে।":"পেমেন্ট SUCCESS হিসেবে সংরক্ষিত হয়েছে।");
           await loadWithdrawals();
