@@ -233,9 +233,11 @@
     const fullName = $("profile-name").value.trim();
     const phone = $("profile-phone").value.trim();
     if (!fullName) return setMessage("আপনার পূর্ণ নাম লিখুন।","error");
+    const normalizedPhone = phone.replace(/\\D/g, "");
+    if (!/^01[3-9][0-9]{8}$/.test(normalizedPhone)) return setMessage("সঠিক ১১ সংখ্যার বাংলাদেশি মোবাইল নম্বর লিখুন।","error");
     profileSave.disabled = true; profileSave.textContent = "সংরক্ষণ হচ্ছে..."; setMessage("");
     try {
-      const {error} = await client.from("profiles").update({full_name:fullName, phone:phone || null}).eq("id",currentUser.id);
+      const {error} = await client.from("profiles").update({full_name:fullName, phone:normalizedPhone}).eq("id",currentUser.id);
       if (error) throw error;
       $("welcome-title").textContent = "স্বাগতম, " + fullName + "!";
       $("profile-avatar").textContent = [...fullName][0] || "আ";
