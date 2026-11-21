@@ -83,7 +83,7 @@ const server = http.createServer(async (req, res) => {
       await requireAdmin(authorization);
       if (isAdminList) {
         const headers = { apikey: SUPABASE_ANON_KEY, Authorization: authorization };
-        const wr = await fetch(BASE() + "/rest/v1/withdrawal_requests?select=id,user_id,amount,payout_method,payout_account_ciphertext,status,is_test,admin_note,created_at,expires_at,paid_at,refunded_at&order=created_at.desc&limit=100", { headers });
+        const wr = await fetch(BASE() + "/rest/v1/withdrawal_requests?select=id,user_id,amount,payout_method,payout_account_ciphertext,status,is_test,admin_note,created_at,expires_at,paid_at,refunded_at,payment_transaction_id&order=created_at.desc&limit=100", { headers });
         const withdrawals = await wr.json();
         if (!wr.ok) return json(res, 400, { error: "উইথড্র তালিকা লোড করা যায়নি।" });
         const ids = [...new Set(withdrawals.map(x => x.user_id))];
@@ -106,10 +106,14 @@ const server = http.createServer(async (req, res) => {
       if (!/^[0-9a-f-]{36}$/i.test(String(input.withdrawal_id || ""))) {
         return json(res, 400, { error: "সঠিক উইথড্র নির্বাচন করুন।" });
       }
+      const transactionId = String(input.transaction_id || "").trim();
+      if (transactionId.length < 4 || transactionId.length > 100) {
+        return json(res, 400, { error: "৪ থেকে ১০০ অক্ষরের সঠিক Transaction ID লিখুন।" });
+      }
       const complete = await fetch(BASE() + "/rest/v1/rpc/admin_complete_withdrawal", {
         method: "POST",
         headers: { "Content-Type": "application/json", apikey: SUPABASE_ANON_KEY, Authorization: authorization },
-        body: JSON.stringify({ p_withdrawal_id: input.withdrawal_id })
+        body: JSON.stringify({ p_withdrawal_id: input.withdrawal_id, p_transaction_id: String(input.transaction_id || "").trim() })
       });
       const responseText = await complete.text();
       if (!complete.ok) return json(res, 400, { error: "পেমেন্ট স্ট্যাটাস আপডেট করা যায়নি।" });
