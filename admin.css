@@ -30,5 +30,5 @@
 .stat-card-clickable:hover{transform:translateY(-2px);box-shadow:0 12px 24px #27376f18;}
 .stat-card-clickable:focus-visible{outline:3px solid var(--accent,#6c7cff);outline-offset:3px;}
 
-.admin-top-actions{display:flex;align-items:center;gap:12px}.admin-back-button{border:1px solid #ffffff55;border-radius:10px;padding:9px 13px;background:#ffffff18;color:#fff;font:800 12px inherit;cursor:pointer}.admin-back-button:hover{background:#ffffff30}.admin-back-button:focus-visible{outline:2px solid #fff;outline-offset:3px}
-@media(max-width:420px){.admin-top-actions{gap:7px}.admin-back-button{padding:8px 10px}.admin-top a{font-size:10px}}
+.admin-top-left{display:flex;align-items:center;gap:10px;min-width:0}.admin-top-actions{display:flex;align-items:center;gap:12px}.admin-back-button{width:36px;height:36px;flex:none;display:grid;place-items:center;border:1px solid #ffffff55;border-radius:10px;padding:0;background:#ffffff18;color:#fff;font:800 22px/1 inherit;cursor:pointer}.admin-back-button:hover{background:#ffffff30}.admin-back-button:focus-visible{outline:2px solid #fff;outline-offset:3px}
+@media(max-width:420px){.admin-top-left{gap:7px}.admin-top-actions{gap:7px}.admin-back-button{width:32px;height:32px;font-size:20px}.admin-top a{font-size:10px}}
