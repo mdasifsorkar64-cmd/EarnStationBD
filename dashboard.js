@@ -217,8 +217,9 @@
     withdrawals.forEach(item => {
       const row = document.createElement("div"); row.className = "data-row";
       const info = document.createElement("div"); info.className = "data-row-info";
-      addText(info,"b","", (item.payout_method === "bkash" ? "বিকাশ" : "নগদ") + " · " + statusText(item.status));
+      addText(info,"b","", (item.is_test ? "TEST · পরীক্ষামূলক · " : "") + (item.payout_method === "bkash" ? "বিকাশ" : "নগদ") + " · " + statusText(item.status));
       addText(info,"small","", "অনুরোধ: " + dateText(item.created_at));
+      if (item.is_test) addText(info,"small","","পরীক্ষামূলক অনুরোধ—বাস্তব পেমেন্ট নয়।");
       if (item.status === "pending" || item.status === "approved") addText(info,"small","","পেমেন্টের শেষ সময়: " + dateText(item.expires_at));
       if (item.paid_at) addText(info,"small","","পেমেন্ট সম্পন্ন: " + dateText(item.paid_at));
       if (item.refunded_at) addText(info,"small","","টাকা ফেরত: " + dateText(item.refunded_at));
