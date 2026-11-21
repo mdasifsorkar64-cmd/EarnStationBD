@@ -121,3 +121,6 @@
 #help-center .offer-action{margin-top:2px}
 #help-center .offer-action-disabled{pointer-events:none}
 @media(max-width:760px){.dash-refresh{width:35px;height:35px}.daily-progress-grid{gap:7px}.daily-progress-grid>div{padding:12px 8px}.daily-progress-grid strong{font-size:20px}.daily-progress-grid span{font-size:9px}}
+
+/* Hide the top-right profile initial badge in the member header. */
+.dashboard-page .dash-topbar .profile-avatar{display:none!important}
