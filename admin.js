@@ -141,11 +141,30 @@
   $("refresh-conversions").addEventListener("click",()=>loadConversions().catch(e=>message(e.message,true)));
   $("refresh-withdrawals").addEventListener("click",()=>loadWithdrawals().catch(e=>message(e.message,true)));
 
+  async function loadCommunitySettings(){
+    $("community-status").textContent="কমিউনিটি লিংক লোড হচ্ছে...";
+    const {data,error}=await client.rpc("admin_get_community_links"); if(error)throw error;
+    $("community-facebook").value=data.facebook_url||""; $("community-telegram").value=data.telegram_url||""; $("community-whatsapp").value=data.whatsapp_url||""; $("community-youtube").value=data.youtube_url||"";
+    $("community-status").textContent="কমিউনিটি লিংক লোড হয়েছে।";
+  }
+  $("community-form").addEventListener("submit",async event=>{
+    event.preventDefault(); const fields=[["facebook","community-facebook"],["telegram","community-telegram"],["whatsapp","community-whatsapp"],["youtube","community-youtube"]];
+    const values={};
+    try {
+      for(const [name,id] of fields){const raw=$(id).value.trim(); if(raw){const u=new URL(raw); if(u.protocol!=="https:")throw new Error("শুধু নিরাপদ HTTPS লিংক ব্যবহার করুন।");} values[name]=raw||null;}
+      $("save-community").disabled=true; $("community-status").textContent="লিংক সংরক্ষণ হচ্ছে...";
+      const {error}=await client.rpc("admin_update_community_links",{p_facebook_url:values.facebook,p_telegram_url:values.telegram,p_whatsapp_url:values.whatsapp,p_youtube_url:values.youtube}); if(error)throw error;
+      $("community-status").textContent="কমিউনিটি লিংক সংরক্ষিত হয়েছে।"; message("কমিউনিটি লিংক আপডেট হয়েছে।");
+    } catch(e){$("community-status").textContent=e.message||"লিংক সংরক্ষণ করা যায়নি।"; message(e.message||"লিংক সংরক্ষণ করা যায়নি।",true);}
+    finally{$("save-community").disabled=false;}
+  });
+
   async function loadSiteSettings(){
     $("site-status").textContent="সেটিংস লোড হচ্ছে...";
     const {data,error}=await client.rpc("admin_get_site_settings");if(error)throw error;
     $("site-name").value=data.site_name||"EarnStationBD";$("site-tagline").value=data.site_tagline||"";$("site-announcement").value=data.announcement||"";$("site-contact").value=data.contact_email||"";
     $("site-status").textContent="ওয়েবসাইট সেটিংস লোড হয়েছে।";
+    await loadCommunitySettings();
     const audit=await client.rpc("admin_get_audit_log");if(audit.error)throw audit.error;
     const root=$("audit-list");root.replaceChildren();if(!audit.data?.length){root.textContent="এখনো কোনো পরিবর্তনের রেকর্ড নেই।";return;}
     audit.data.forEach(x=>{const row=el("div","admin-row");row.append(el("div","admin-row-main",""),el("small","",x.action+" · "+fmt(x.created_at)));row.firstChild.append(el("b","",x.action),el("small","",JSON.stringify(x.details||{})));root.append(row);});
