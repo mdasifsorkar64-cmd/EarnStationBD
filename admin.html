@@ -21,6 +21,7 @@
 <button class="admin-nav" data-view="conversions"><span>৳</span> কমিশন যাচাই</button>
 <button class="admin-nav" data-view="withdrawals"><span>▤</span> উত্তোলন ও পেমেন্ট</button>
 <button class="admin-nav" data-view="settings"><span>⚙</span> আয় ও সীমা নিয়ন্ত্রণ</button>
+<button class="admin-nav" data-view="site"><span>▣</span> ওয়েবসাইট কাস্টমাইজ</button>
 </aside>
 <div class="admin-main">
 <section class="admin-view active" id="view-overview">
@@ -73,13 +74,24 @@
 <form id="settings-form" class="admin-form">
 <label>সর্বনিম্ন উত্তোলন (৳)<input id="minimum-withdrawal" type="number" min="1" step="1" required></label>
 <label>প্রতি সম্পূর্ণ বিজ্ঞাপনে প্রস্তাবিত কমিশন (৳)<input id="ad-reward" type="number" min="0" step="0.01" required></label>
-<label>প্রতি সদস্যের দৈনিক বিজ্ঞাপন সীমা<input id="daily-ad-limit" type="number" min="0" max="100" step="1" required></label>
+<label>প্রতি সদস্যের দৈনিক বিজ্ঞাপন সীমা<input id="daily-ad-limit" type="number" min="0" max="200" step="1" required></label>
 <label class="settings-toggle"><input id="ads-enabled" type="checkbox"> বিজ্ঞাপন-আয় চালু (শুধু যাচাইকৃত Ad Provider যুক্ত হলে)</label>
 <button type="submit" id="save-settings">সেটিংস সংরক্ষণ করুন</button>
 <p class="admin-help">বিজ্ঞাপন সরবরাহকারীর যাচাইকৃত completion callback যুক্ত না হওয়া পর্যন্ত বিজ্ঞাপন চালু করবেন না। এই সেটিংস একা বিজ্ঞাপন বা আয় তৈরি করে না। সর্বনিম্ন উত্তোলন সার্ভারেও যাচাই হবে।</p>
 </form>
 <div id="settings-status" class="admin-message" role="status">সেটিংস লোড হচ্ছে...</div>
 </div>
+</section>
+<section class="admin-view" id="view-site">
+<div class="view-heading"><div><p>SITE CONTROL</p><h2>ওয়েবসাইট কাস্টমাইজ</h2><span>সাইটের নাম, ঘোষণা ও পরিচিতি সম্পাদনা</span></div><button class="secondary" id="refresh-site">↻ রিফ্রেশ</button></div>
+<div class="admin-panel"><form id="site-form" class="admin-form">
+<label>ওয়েবসাইটের নাম<input id="site-name" maxlength="80" required></label>
+<label>হোমপেজের ছোট শিরোনাম<input id="site-tagline" maxlength="180"></label>
+<label>ঘোষণা / নোটিশ<textarea id="site-announcement" rows="4" maxlength="1000"></textarea></label>
+<label>যোগাযোগ ইমেইল<input id="site-contact" type="email" maxlength="180"></label>
+<button type="submit" id="save-site">ওয়েবসাইট সেটিংস সংরক্ষণ করুন</button>
+</form><div id="site-status" class="admin-message">সেটিংস লোড হচ্ছে...</div><p class="admin-help">এই সেটিংস ডেটাবেসে সংরক্ষিত হবে। হোমপেজে দেখাতে পরবর্তী ধাপে public site configuration যুক্ত করতে হবে।</p></div>
+<div class="admin-panel"><h3>পরিবর্তনের ইতিহাস</h3><div id="audit-list" class="admin-list">লোড হচ্ছে...</div></div>
 </section>
 </div></div>
 </main>
