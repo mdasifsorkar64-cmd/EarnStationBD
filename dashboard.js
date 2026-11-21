@@ -173,7 +173,7 @@
     if (refreshButton) { refreshButton.disabled = true; refreshButton.classList.add("is-loading"); }
     const [profileResult, ledgerResult, conversionResult, withdrawalResult] = await Promise.all([
       client.from("profiles").select("full_name,phone,created_at,role,account_status").eq("id", user.id).maybeSingle(),
-      client.from("ledger_entries").select("id,entry_type,amount,description,created_at,is_test").eq("user_id", user.id).order("created_at", {ascending:false}).limit(50),
+      client.from("ledger_entries").select("id,entry_type,amount,description,created_at,is_test,withdrawal_id").eq("user_id", user.id).order("created_at", {ascending:false}).limit(50),
       client.from("partner_conversions").select("id,partner_name,commission_amount,status,received_at").eq("user_id", user.id).order("received_at", {ascending:false}).limit(50),
       client.from("withdrawal_requests").select("id,amount,payout_method,status,admin_note,created_at,expires_at,paid_at,refunded_at,is_test").eq("user_id", user.id).order("created_at", {ascending:false}).limit(30)
     ]);
@@ -196,7 +196,11 @@
     const withdrawals = withdrawalResult.data || [];
     const credits = ledger.filter(item => item.entry_type === "credit").reduce((sum,item) => sum + Number(item.amount),0);
     const debits = ledger.filter(item => item.entry_type !== "credit").reduce((sum,item) => sum + Number(item.amount),0);
-    const reserved = withdrawals.filter(item => ["pending","approved","paid"].includes(item.status)).reduce((sum,item) => sum + Number(item.amount),0);
+    // Withdrawal requests are debited from the ledger immediately. Refunds add a credit entry.
+    // Keep legacy active requests without a linked debit reserved during migration transition.
+    const ledgerWithdrawalIds = new Set(ledger.filter(item => item.withdrawal_id && item.entry_type === "debit").map(item => item.withdrawal_id));
+    const reserved = withdrawals.filter(item => ["pending","approved"].includes(item.status) && !ledgerWithdrawalIds.has(item.id))
+      .reduce((sum,item) => sum + Number(item.amount),0);
     const approved = conversions.filter(item => item.status === "approved").reduce((sum,item) => sum + Number(item.commission_amount),0);
     const pending = conversions.filter(item => item.status === "pending");
     const todayStart = new Date(); todayStart.setHours(0,0,0,0);
@@ -215,9 +219,12 @@
     const supportLink = $("support-email-link");
     if (site?.contact_email) { supportLink.href = "mailto:" + site.contact_email + "?subject=" + encodeURIComponent("EarnStationBD সহায়তা"); supportLink.textContent = "ইমেইল করুন: " + site.contact_email; supportLink.classList.remove("offer-action-disabled"); supportLink.removeAttribute("aria-disabled"); }
     else { supportLink.textContent = "যোগাযোগের ইমেইল এখনো যোগ করা হয়নি"; supportLink.setAttribute("aria-disabled","true"); }
-    $("total-earned").textContent = money(credits);
+    const currentLedgerBalance = Math.max(0, credits - debits);
+    $("total-earned").textContent = money(currentLedgerBalance);
     $("approved-commission").textContent = money(approved);
-    currentAvailableBalance = Math.max(0, credits - debits - reserved);
+    // Linked debit rows already subtract pending/paid withdrawals. Only legacy pending rows
+    // without a ledger debit remain reserved; new requests must never be subtracted twice.
+    currentAvailableBalance = Math.max(0, currentLedgerBalance - reserved);
     $("available-balance").textContent = money(currentAvailableBalance);
     $("withdraw-form-balance").textContent = money(currentAvailableBalance);
     $("pending-count").textContent = pending.length.toLocaleString("bn-BD");
