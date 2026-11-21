@@ -64,10 +64,13 @@
     catch(e){$("referral-settings-status").textContent=e.message||"রেফারেল বোনাস সংরক্ষণ হয়নি।";message(e.message||"রেফারেল বোনাস সংরক্ষণ হয়নি।",true);}
     finally{$("save-referral-settings").disabled=false;}
   });
-  async function loadMembers(){
+    async function loadMembers(){
     $("members-list").textContent="সদস্য তালিকা লোড হচ্ছে...";
     const {data,error}=await client.rpc("admin_list_members",{p_search:$("member-search").value.trim()});
     if(error)throw error;
+    const {data:presenceData,error:presenceError}=await client.rpc("admin_get_member_presence");
+    if(presenceError)throw presenceError;
+    const presenceMap=new Map((presenceData||[]).map(p=>[p.user_id,p]));
     const ids=(data||[]).map(m=>m.id);const states=ids.length?await client.from("profiles").select("id,account_status").in("id",ids):{data:[],error:null};if(states.error)throw states.error;
     const stateMap=new Map((states.data||[]).map(x=>[x.id,x.account_status]));(data||[]).forEach(m=>m.account_status=stateMap.get(m.id)||"active");
     $("member-count").textContent=(data?.length||0)+" জন সদস্য";
@@ -75,9 +78,14 @@
     const root=$("members-list");root.replaceChildren();
     if(!data?.length){root.textContent="কোনো সদস্য পাওয়া যায়নি।";return;}
     data.forEach(m=>{
-      const card=el("article","member-card"),top=el("div","member-top"),left=el("div","");
+      const card=el("article","member-card"),top=el("div","member-top"),left=el("div",""),statusStack=el("div","member-status-stack");
       left.append(el("div","member-name",m.full_name||"নাম দেওয়া হয়নি"),el("div","member-email",m.email||"ইমেইল নেই"));
-      top.append(left,el("span","role-pill",m.role==="admin"?"ADMIN":(m.account_status==="suspended"?"SUSPENDED":"ACTIVE · MEMBER")));card.append(top);
+      statusStack.append(el("span","role-pill",m.role==="admin"?"ADMIN":(m.account_status==="suspended"?"SUSPENDED":"ACTIVE · MEMBER")));
+      if(m.role!=="admin"){
+        const online=Boolean(presenceMap.get(m.id)?.is_online);
+        statusStack.append(el("span","presence-badge "+(online?"is-online":"is-offline"),online?"● অনলাইন":"○ অফলাইন"));
+      }
+      top.append(left,statusStack);card.append(top);
       const meta=el("div","member-meta");
       const fields=[["User ID",m.id],["ফোন",m.phone||"দেওয়া হয়নি"],["নিবন্ধন",fmt(m.created_at)],["সর্বশেষ লগইন",fmt(m.last_sign_in_at)]];
       fields.forEach(([label,value])=>{const box=el("div","");box.append(el("small","",label),el("b","",value));meta.append(box);});
@@ -85,35 +93,7 @@
     });
   }
 
-  async function loadPresence() {
-    const root=$("presence-list");
-    if (!root) return;
-    $("presence-summary").textContent="সদস্যদের অবস্থা আপডেট হচ্ছে...";
-    const {data,error}=await client.rpc("admin_get_member_presence");
-    if(error)throw error;
-    const rows=data||[];
-    const online=rows.filter(x=>x.is_online);
-    $("presence-summary").textContent="মোট সদস্য: "+rows.length.toLocaleString("bn-BD")+" · এখন অনলাইন: "+online.length.toLocaleString("bn-BD");
-    root.replaceChildren();
-    if(!rows.length){root.textContent="এখনো কোনো সদস্য নেই।";return;}
-    rows.sort((x,y)=>Number(y.is_online)-Number(x.is_online) || new Date(y.last_seen_at||0)-new Date(x.last_seen_at||0));
-    rows.forEach(m=>{
-      const card=el("article","member-card"),top=el("div","member-top"),info=el("div","");
-      info.append(el("div","member-name",m.full_name||"নাম দেওয়া হয়নি"),el("div","member-email",m.phone||"ফোন নেই"));
-      top.append(info,el("span","role-pill",m.is_online?"● অনলাইন":"○ অফলাইন"));
-      card.append(top);
-      const meta=el("div","member-meta");
-      const box=el("div","");
-      box.append(el("small","","সর্বশেষ সক্রিয়"),el("b","",m.last_seen_at?fmt(m.last_seen_at):"এখনো ব্যবহার করেনি"));
-      meta.append(box);card.append(meta);root.append(card);
-    });
-  }
-
-  let memberTimer;
-  $("member-search").addEventListener("input",()=>{clearTimeout(memberTimer);memberTimer=setTimeout(()=>loadMembers().catch(e=>message(e.message,true)),250);});
-  $("refresh-members").addEventListener("click",()=>loadMembers().catch(e=>message(e.message,true)));
-  $("refresh-presence").addEventListener("click",()=>loadPresence().catch(e=>message(e.message,true)));
-  async function loadOffers(){
+async function loadOffers(){
     $("offers-table").textContent="লোড হচ্ছে...";
     const {data,error}=await client.from("offers").select("id,title,partner_name,status,destination_url,created_at").order("created_at",{ascending:false}).limit(100);if(error)throw error;
     const root=$("offers-table");root.replaceChildren();$("stat-offers").textContent=data.length;
@@ -216,9 +196,9 @@
   }catch(e){$("site-status").textContent=e.message||"সংরক্ষণ করা যায়নি।";message(e.message||"সংরক্ষণ করা যায়নি।",true);}finally{$("save-site").disabled=false;}});
   $("refresh-site").addEventListener("click",()=>loadSiteSettings().catch(e=>message(e.message,true)));
 
-  async function refreshAll(){try{await Promise.all([loadMembers(),loadPresence(),loadOffers(),loadConversions(),loadWithdrawals(),loadSettings(),loadSiteSettings(),loadReferralSettings()]);message("সব তথ্য আপডেট হয়েছে।");}catch(e){message(e.message||"তথ্য লোড করা যায়নি।",true);}}
+  async function refreshAll(){try{await Promise.all([loadMembers(),loadOffers(),loadConversions(),loadWithdrawals(),loadSettings(),loadSiteSettings(),loadReferralSettings()]);message("সব তথ্য আপডেট হয়েছে।");}catch(e){message(e.message||"তথ্য লোড করা যায়নি।",true);}}
   $("refresh-all").addEventListener("click",refreshAll);
   (async()=>{try{const {data,error}=await client.auth.getSession();if(error)throw error;if(!data.session){location.replace("auth.html");return;}const {data:profile,error:pe}=await client.from("profiles").select("role").eq("id",data.session.user.id).single();if(pe)throw pe;if(profile?.role!=="admin"){location.replace("dashboard.html");return;}
-    $("admin-top").hidden=false;$("admin-content").hidden=false;$("admin-footer").hidden=false;message("অ্যাডমিন যাচাই সফল।");await refreshAll();setInterval(()=>loadPresence().catch(e=>console.warn("Presence refresh:",e.message)),15000);
+    $("admin-top").hidden=false;$("admin-content").hidden=false;$("admin-footer").hidden=false;message("অ্যাডমিন যাচাই সফল।");await refreshAll();
   }catch(e){message(e.message||"অ্যাডমিন প্যানেল লোড করা যায়নি।",true);}})();
 })();
