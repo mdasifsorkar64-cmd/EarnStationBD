@@ -143,9 +143,25 @@
     $("referral-total").textContent=money(info.total_bonus);
     $("referral-current-bonus").textContent=money(info.current_bonus);
     const inviteUrl=new URL("auth.html",window.location.href);inviteUrl.searchParams.set("ref",code);const link=inviteUrl.href;
-    const copy=async value=>{try{await navigator.clipboard.writeText(value);$("referral-message").textContent="কপি হয়েছে। বন্ধুকে পাঠিয়ে দিন।";}catch(_){$("referral-message").textContent=value;}};
+    const copy=async value=>{try{await navigator.clipboard.writeText(value);$("referral-message").textContent="কপি হয়েছে।";}catch(_){$("referral-message").textContent=value;}};
     $("copy-referral-code").onclick=()=>copy(code);
-    $("copy-referral-link").onclick=()=>copy(link);
+    $("share-referral-link").onclick=async()=>{
+      const shareData={title:"EarnStationBD-এ যোগ দিন",text:"আমার আমন্ত্রণ লিংক দিয়ে EarnStationBD-এ যোগ দিন। আমন্ত্রণ কোড: "+code,url:link};
+      try {
+        if(navigator.share && (!navigator.canShare || navigator.canShare(shareData))) {
+          await navigator.share(shareData);
+          $("referral-message").textContent="আমন্ত্রণ লিংক শেয়ার করা হয়েছে।";
+        } else {
+          await copy(link);
+          $("referral-message").textContent="এই ফোনে শেয়ার অপশন নেই, তাই লিংক কপি হয়েছে।";
+        }
+      } catch(error) {
+        if(error.name!=="AbortError") {
+          try { await copy(link); $("referral-message").textContent="শেয়ার করা যায়নি, লিংক কপি হয়েছে।"; }
+          catch(_) { $("referral-message").textContent=link; }
+        }
+      }
+    };
   }
 
   async function loadDashboard(user) {
