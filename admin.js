@@ -84,9 +84,35 @@
       card.append(meta);if(m.role!=="admin"){const actions=el("div","admin-row-actions");actions.append(button(m.account_status==="suspended"?"পুনরায় Active":"Suspend",async()=>{if(!confirm("এই সদস্যের অ্যাকাউন্টের অবস্থা পরিবর্তন করবেন?"))return;const next=m.account_status==="suspended"?"active":"suspended";const {error}=await client.rpc("admin_set_member_status",{p_user_id:m.id,p_status:next});if(error)throw error;message("সদস্যের অবস্থা আপডেট হয়েছে।");await loadMembers();},m.account_status==="suspended"?"active":"paused"));actions.append(button("পরীক্ষামূলক ৳১০০ যোগ",async()=>{if(!confirm((m.full_name||"এই সদস্য")+"-এর হিসাবে পরীক্ষামূলক ৳১০০ যোগ করবেন? এটি বাস্তব অর্থ নয় এবং বাস্তব পেমেন্টে ব্যবহার করা যাবে না।"))return;const {error}=await client.rpc("admin_add_test_balance",{p_user_id:m.id,p_amount:100});if(error)throw error;message("পরীক্ষামূলক ৳১০০ যোগ হয়েছে। সদস্যের ড্যাশবোর্ড রিফ্রেশ করুন।");await loadMembers();},"active"));card.append(actions);}root.append(card);
     });
   }
+
+  async function loadPresence() {
+    const root=$("presence-list");
+    if (!root) return;
+    $("presence-summary").textContent="সদস্যদের অবস্থা আপডেট হচ্ছে...";
+    const {data,error}=await client.rpc("admin_get_member_presence");
+    if(error)throw error;
+    const rows=data||[];
+    const online=rows.filter(x=>x.is_online);
+    $("presence-summary").textContent="মোট সদস্য: "+rows.length.toLocaleString("bn-BD")+" · এখন অনলাইন: "+online.length.toLocaleString("bn-BD");
+    root.replaceChildren();
+    if(!rows.length){root.textContent="এখনো কোনো সদস্য নেই।";return;}
+    rows.sort((x,y)=>Number(y.is_online)-Number(x.is_online) || new Date(y.last_seen_at||0)-new Date(x.last_seen_at||0));
+    rows.forEach(m=>{
+      const card=el("article","member-card"),top=el("div","member-top"),info=el("div","");
+      info.append(el("div","member-name",m.full_name||"নাম দেওয়া হয়নি"),el("div","member-email",m.phone||"ফোন নেই"));
+      top.append(info,el("span","role-pill",m.is_online?"● অনলাইন":"○ অফলাইন"));
+      card.append(top);
+      const meta=el("div","member-meta");
+      const box=el("div","");
+      box.append(el("small","","সর্বশেষ সক্রিয়"),el("b","",m.last_seen_at?fmt(m.last_seen_at):"এখনো ব্যবহার করেনি"));
+      meta.append(box);card.append(meta);root.append(card);
+    });
+  }
+
   let memberTimer;
   $("member-search").addEventListener("input",()=>{clearTimeout(memberTimer);memberTimer=setTimeout(()=>loadMembers().catch(e=>message(e.message,true)),250);});
   $("refresh-members").addEventListener("click",()=>loadMembers().catch(e=>message(e.message,true)));
+  $("refresh-presence").addEventListener("click",()=>loadPresence().catch(e=>message(e.message,true)));
   async function loadOffers(){
     $("offers-table").textContent="লোড হচ্ছে...";
     const {data,error}=await client.from("offers").select("id,title,partner_name,status,destination_url,created_at").order("created_at",{ascending:false}).limit(100);if(error)throw error;
@@ -190,9 +216,9 @@
   }catch(e){$("site-status").textContent=e.message||"সংরক্ষণ করা যায়নি।";message(e.message||"সংরক্ষণ করা যায়নি।",true);}finally{$("save-site").disabled=false;}});
   $("refresh-site").addEventListener("click",()=>loadSiteSettings().catch(e=>message(e.message,true)));
 
-  async function refreshAll(){try{await Promise.all([loadMembers(),loadOffers(),loadConversions(),loadWithdrawals(),loadSettings(),loadSiteSettings(),loadReferralSettings()]);message("সব তথ্য আপডেট হয়েছে।");}catch(e){message(e.message||"তথ্য লোড করা যায়নি।",true);}}
+  async function refreshAll(){try{await Promise.all([loadMembers(),loadPresence(),loadOffers(),loadConversions(),loadWithdrawals(),loadSettings(),loadSiteSettings(),loadReferralSettings()]);message("সব তথ্য আপডেট হয়েছে।");}catch(e){message(e.message||"তথ্য লোড করা যায়নি।",true);}}
   $("refresh-all").addEventListener("click",refreshAll);
   (async()=>{try{const {data,error}=await client.auth.getSession();if(error)throw error;if(!data.session){location.replace("auth.html");return;}const {data:profile,error:pe}=await client.from("profiles").select("role").eq("id",data.session.user.id).single();if(pe)throw pe;if(profile?.role!=="admin"){location.replace("dashboard.html");return;}
-    $("admin-top").hidden=false;$("admin-content").hidden=false;$("admin-footer").hidden=false;message("অ্যাডমিন যাচাই সফল।");await refreshAll();
+    $("admin-top").hidden=false;$("admin-content").hidden=false;$("admin-footer").hidden=false;message("অ্যাডমিন যাচাই সফল।");await refreshAll();setInterval(()=>loadPresence().catch(e=>console.warn("Presence refresh:",e.message)),15000);
   }catch(e){message(e.message||"অ্যাডমিন প্যানেল লোড করা যায়নি।",true);}})();
 })();
