@@ -11,6 +11,7 @@
   function navigateView(name){if(!document.getElementById("view-"+name))return;history.pushState({adminView:name},"","#admin-"+name);showView(name);}
   history.replaceState({adminView:"overview"},"","#admin-overview");
   window.addEventListener("popstate",event=>showView(event.state?.adminView||"overview"));
+  $("admin-back-button").addEventListener("click",()=>{if(history.length>1)history.back();else navigateView("overview");});
   document.querySelectorAll(".admin-nav").forEach(b=>b.addEventListener("click",()=>navigateView(b.dataset.view)));
   document.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>navigateView(b.dataset.go)));
   const membersStatCard=$("members-stat-card");
