@@ -34,3 +34,17 @@
 @media(max-width:420px){.admin-top-left{gap:7px}.admin-top-actions{gap:7px}.admin-back-button{width:32px;height:32px;font-size:20px}.admin-top a{font-size:10px}}
 
 #community-form{margin-top:14px}
+
+
+/* Consistent line-based SVG icon system for the admin control center */
+.admin-page .admin-icon{width:19px;height:19px;flex:none;display:inline-flex;align-items:center;justify-content:center;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle}
+.admin-page .admin-icon svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.admin-page .admin-brand{display:inline-flex;align-items:center;gap:8px}
+.admin-page .admin-brand .brand-icon{width:22px;height:22px;color:#38d5ff;stroke-width:2.1}
+.admin-page .admin-nav .admin-icon{width:21px;height:21px;color:#5364d8}
+.admin-page .admin-nav.active .admin-icon,.admin-page .admin-nav:hover .admin-icon{color:#5145cd}
+.admin-page .admin-shield .shield-icon{width:48px;height:48px;color:#fff;stroke-width:1.65}
+.admin-page .stat-card>span.admin-icon{width:32px;height:32px;padding:6px;box-sizing:border-box}
+.admin-page .quick-actions button{display:flex;align-items:center;gap:9px;cursor:pointer}
+.admin-page .quick-actions button .admin-icon{width:18px;height:18px;color:#5364d8}
+@media(max-width:760px){.admin-page .admin-nav .admin-icon{width:19px;height:19px}.admin-page .admin-shield .shield-icon{width:39px;height:39px}}
