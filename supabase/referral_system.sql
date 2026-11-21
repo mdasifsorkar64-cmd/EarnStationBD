@@ -18,7 +18,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path = public
-as $
+as $$
 begin
   if old.referral_code is distinct from new.referral_code
      or old.referred_by is distinct from new.referred_by then
@@ -26,7 +26,7 @@ begin
   end if;
   return new;
 end;
-$;
+$$
 drop trigger if exists protect_referral_attribution on public.profiles;
 create trigger protect_referral_attribution
 before update on public.profiles
