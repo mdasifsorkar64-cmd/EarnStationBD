@@ -30,3 +30,12 @@
 .profile-panel .verified-tag{white-space:nowrap}
 @media(max-width:760px){.dash-topbar{position:sticky;top:0;z-index:20}.welcome-banner{border-radius:18px}.panel{padding:16px}.panel-head h2{font-size:15px}.dash-footer{text-align:center}}
 @media(prefers-reduced-motion:reduce){.stat-card,.panel{transition:none!important}}
+
+
+/* Unified SVG icon family across member dashboard navigation and panels */
+.dashboard-page .dash-icon{width:19px;height:19px;flex:none;display:inline-block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle}
+.dashboard-page .dash-logo .dash-icon{width:23px;height:23px;stroke-width:2.1}
+.dashboard-page .side-link .dash-icon{width:21px;height:21px}
+.dashboard-page .logout-button .dash-icon{width:19px;height:19px}
+.dashboard-page .panel-heading-icon.dash-icon{width:21px;height:21px;font-size:initial}
+@media(max-width:760px){.dashboard-page .side-link .dash-icon{width:19px;height:19px}}
