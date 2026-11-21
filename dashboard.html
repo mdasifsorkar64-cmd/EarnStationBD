@@ -53,7 +53,7 @@
       <form id="profile-form" class="profile-form">
         <label for="profile-name">পূর্ণ নাম</label><input id="profile-name" name="full_name" type="text" maxlength="100" autocomplete="name" required>
         <label for="profile-email">ইমেইল ঠিকানা</label><input id="profile-email" type="email" disabled>
-        <label for="profile-phone">মোবাইল নম্বর (ঐচ্ছিক)</label><input id="profile-phone" name="phone" type="tel" inputmode="tel" maxlength="20" placeholder="যেমন: 01XXXXXXXXX">
+        <label for="profile-phone">মোবাইল নম্বর <span aria-hidden="true">*</span></label><input id="profile-phone" name="phone" type="tel" inputmode="numeric" maxlength="11" autocomplete="tel" pattern="01[3-9][0-9]{8}" placeholder="01XXXXXXXXX" required>
         <button class="profile-save" id="profile-save" type="submit">পরিবর্তন সংরক্ষণ করুন</button>
         <p id="profile-message" class="profile-message" role="status" aria-live="polite"></p>
       </form>
