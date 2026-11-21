@@ -51,7 +51,7 @@
       const meta=el("div","member-meta");
       const fields=[["User ID",m.id],["ফোন",m.phone||"দেওয়া হয়নি"],["নিবন্ধন",fmt(m.created_at)],["সর্বশেষ লগইন",fmt(m.last_sign_in_at)]];
       fields.forEach(([label,value])=>{const box=el("div","");box.append(el("small","",label),el("b","",value));meta.append(box);});
-      card.append(meta);if(m.role!=="admin"){const actions=el("div","admin-row-actions");actions.append(button(m.account_status==="suspended"?"পুনরায় Active":"Suspend",async()=>{if(!confirm("এই সদস্যের অ্যাকাউন্টের অবস্থা পরিবর্তন করবেন?"))return;const next=m.account_status==="suspended"?"active":"suspended";const {error}=await client.rpc("admin_set_member_status",{p_user_id:m.id,p_status:next});if(error)throw error;message("সদস্যের অবস্থা আপডেট হয়েছে।");await loadMembers();},m.account_status==="suspended"?"active":"paused"));card.append(actions);}root.append(card);
+      card.append(meta);if(m.role!=="admin"){const actions=el("div","admin-row-actions");actions.append(button(m.account_status==="suspended"?"পুনরায় Active":"Suspend",async()=>{if(!confirm("এই সদস্যের অ্যাকাউন্টের অবস্থা পরিবর্তন করবেন?"))return;const next=m.account_status==="suspended"?"active":"suspended";const {error}=await client.rpc("admin_set_member_status",{p_user_id:m.id,p_status:next});if(error)throw error;message("সদস্যের অবস্থা আপডেট হয়েছে।");await loadMembers();},m.account_status==="suspended"?"active":"paused"));actions.append(button("পরীক্ষামূলক ৳১০০ যোগ",async()=>{if(!confirm((m.full_name||"এই সদস্য")+"-এর হিসাবে পরীক্ষামূলক ৳১০০ যোগ করবেন? এটি বাস্তব অর্থ নয় এবং বাস্তব পেমেন্টে ব্যবহার করা যাবে না।"))return;const {error}=await client.rpc("admin_add_test_balance",{p_user_id:m.id,p_amount:100});if(error)throw error;message("পরীক্ষামূলক ৳১০০ যোগ হয়েছে। সদস্যের ড্যাশবোর্ড রিফ্রেশ করুন।");await loadMembers();},"active"));card.append(actions);}root.append(card);
     });
   }
   let memberTimer;
@@ -92,7 +92,7 @@
       const row=el("div","admin-row"),info=el("div","admin-row-main");
       const member=w.member||{};
       info.append(
-        el("b","",money(w.amount)+" · "+(w.payout_method==="bkash"?"বিকাশ":"নগদ")+" · "+statusBn(w.status)),
+        el("b","", (w.is_test?"[TEST] পরীক্ষামূলক · ":"")+money(w.amount)+" · "+(w.payout_method==="bkash"?"বিকাশ":"নগদ")+" · "+statusBn(w.status)),
         el("small","","সদস্য: "+(member.full_name||"নাম নেই")+" · "+(member.phone||"ফোন নেই")),
         el("small","","পেমেন্ট নম্বর: "+w.payout_account),
         el("small","","User ID: "+w.user_id),
@@ -101,8 +101,9 @@
       if(w.paid_at) info.append(el("small","","পেমেন্ট সম্পন্ন: "+fmt(w.paid_at)));
       if(w.refunded_at) info.append(el("small","","টাকা ফেরত: "+fmt(w.refunded_at)));
       if(w.admin_note) info.append(el("small","","নোট: "+w.admin_note));
+      if(w.is_test) info.append(el("small","","এটি পরীক্ষামূলক অনুরোধ—বাস্তব পেমেন্ট নিষিদ্ধ। ৫ ঘণ্টা পরে স্বয়ংক্রিয়ভাবে REFUNDED হবে।"));
       row.append(info);
-      if(["pending","approved"].includes(w.status)){
+      if(!w.is_test && ["pending","approved"].includes(w.status)){
         row.append(button("টাকা পাঠিয়েছি · SUCCESS করুন",async()=>{
           if(!confirm("সদস্যকে বিকাশ/নগদে "+money(w.amount)+" সত্যিই পাঠানো হয়েছে কি? টাকা পাঠানোর পরই শুধু SUCCESS করুন।"))return;
           const {data:{session:active}}=await client.auth.getSession();
