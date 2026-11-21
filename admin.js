@@ -23,7 +23,7 @@
   $("settings-form").addEventListener("submit",async event=>{
     event.preventDefault();
     const minimum=Number($("minimum-withdrawal").value),reward=Number($("ad-reward").value),limit=Number($("daily-ad-limit").value),enabled=$("ads-enabled").checked;
-    if(!Number.isFinite(minimum)||minimum<1||!Number.isFinite(reward)||reward<0||!Number.isInteger(limit)||limit<0||limit>100){$("settings-status").textContent="সঠিক সীমা ও পরিমাণ লিখুন।";return;}
+    if(!Number.isFinite(minimum)||minimum<1||!Number.isFinite(reward)||reward<0||!Number.isInteger(limit)||limit<0||limit>200){$("settings-status").textContent="সঠিক সীমা ও পরিমাণ লিখুন।";return;}
     if(enabled){$("settings-status").textContent="Ad Provider-এর যাচাইকৃত callback যুক্ত না হওয়া পর্যন্ত বিজ্ঞাপন চালু করা যাবে না।";$("ads-enabled").checked=false;return;}
     $("save-settings").disabled=true;
     try{
@@ -45,11 +45,11 @@
     data.forEach(m=>{
       const card=el("article","member-card"),top=el("div","member-top"),left=el("div","");
       left.append(el("div","member-name",m.full_name||"নাম দেওয়া হয়নি"),el("div","member-email",m.email||"ইমেইল নেই"));
-      top.append(left,el("span","role-pill",m.role==="admin"?"ADMIN":"MEMBER"));card.append(top);
+      top.append(left,el("span","role-pill",m.role==="admin"?"ADMIN":(m.account_status==="suspended"?"SUSPENDED":"MEMBER")));card.append(top);
       const meta=el("div","member-meta");
       const fields=[["User ID",m.id],["ফোন",m.phone||"দেওয়া হয়নি"],["নিবন্ধন",fmt(m.created_at)],["সর্বশেষ লগইন",fmt(m.last_sign_in_at)]];
       fields.forEach(([label,value])=>{const box=el("div","");box.append(el("small","",label),el("b","",value));meta.append(box);});
-      card.append(meta);root.append(card);
+      card.append(meta);if(m.role!=="admin"){const actions=el("div","admin-row-actions");actions.append(button(m.account_status==="suspended"?"পুনরায় Active":"Suspend",async()=>{if(!confirm("এই সদস্যের অ্যাকাউন্টের অবস্থা পরিবর্তন করবেন?"))return;const next=m.account_status==="suspended"?"active":"suspended";const {error}=await client.rpc("admin_set_member_status",{p_user_id:m.id,p_status:next});if(error)throw error;message("সদস্যের অবস্থা আপডেট হয়েছে।");await loadMembers();},m.account_status==="suspended"?"active":"paused"));card.append(actions);}root.append(card);
     });
   }
   let memberTimer;
@@ -117,7 +117,23 @@
   $("refresh-offers").addEventListener("click",()=>loadOffers().catch(e=>message(e.message,true)));
   $("refresh-conversions").addEventListener("click",()=>loadConversions().catch(e=>message(e.message,true)));
   $("refresh-withdrawals").addEventListener("click",()=>loadWithdrawals().catch(e=>message(e.message,true)));
-  async function refreshAll(){try{await Promise.all([loadMembers(),loadOffers(),loadConversions(),loadWithdrawals(),loadSettings()]);message("সব তথ্য আপডেট হয়েছে।");}catch(e){message(e.message||"তথ্য লোড করা যায়নি।",true);}}
+
+  async function loadSiteSettings(){
+    $("site-status").textContent="সেটিংস লোড হচ্ছে...";
+    const {data,error}=await client.rpc("admin_get_site_settings");if(error)throw error;
+    $("site-name").value=data.site_name||"EarnStationBD";$("site-tagline").value=data.site_tagline||"";$("site-announcement").value=data.announcement||"";$("site-contact").value=data.contact_email||"";
+    $("site-status").textContent="ওয়েবসাইট সেটিংস লোড হয়েছে।";
+    const audit=await client.rpc("admin_get_audit_log");if(audit.error)throw audit.error;
+    const root=$("audit-list");root.replaceChildren();if(!audit.data?.length){root.textContent="এখনো কোনো পরিবর্তনের রেকর্ড নেই।";return;}
+    audit.data.forEach(x=>{const row=el("div","admin-row");row.append(el("div","admin-row-main",""),el("small","",x.action+" · "+fmt(x.created_at)));row.firstChild.append(el("b","",x.action),el("small","",JSON.stringify(x.details||{})));root.append(row);});
+  }
+  $("site-form").addEventListener("submit",async event=>{event.preventDefault();$("save-site").disabled=true;try{
+    const {error}=await client.rpc("admin_update_site_settings",{p_site_name:$("site-name").value.trim(),p_site_tagline:$("site-tagline").value.trim(),p_announcement:$("site-announcement").value.trim(),p_contact_email:$("site-contact").value.trim()||null});if(error)throw error;
+    $("site-status").textContent="ওয়েবসাইট সেটিংস সংরক্ষিত হয়েছে।";message("ওয়েবসাইট সেটিংস আপডেট হয়েছে।");await loadSiteSettings();
+  }catch(e){$("site-status").textContent=e.message||"সংরক্ষণ করা যায়নি।";message(e.message||"সংরক্ষণ করা যায়নি।",true);}finally{$("save-site").disabled=false;}});
+  $("refresh-site").addEventListener("click",()=>loadSiteSettings().catch(e=>message(e.message,true)));
+
+  async function refreshAll(){try{await Promise.all([loadMembers(),loadOffers(),loadConversions(),loadWithdrawals(),loadSettings(),loadSiteSettings()]);message("সব তথ্য আপডেট হয়েছে।");}catch(e){message(e.message||"তথ্য লোড করা যায়নি।",true);}}
   $("refresh-all").addEventListener("click",refreshAll);
   (async()=>{try{const {data,error}=await client.auth.getSession();if(error)throw error;if(!data.session){location.replace("auth.html");return;}const {data:profile,error:pe}=await client.from("profiles").select("role").eq("id",data.session.user.id).single();if(pe)throw pe;if(profile?.role!=="admin"){location.replace("dashboard.html");return;}
     $("admin-top").hidden=false;$("admin-content").hidden=false;$("admin-footer").hidden=false;message("অ্যাডমিন যাচাই সফল।");await refreshAll();
