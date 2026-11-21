@@ -101,3 +101,23 @@
  .side-link{font-size:8px}
 }
 @media(prefers-reduced-motion:reduce){.dash-view.active{animation:none}.offer-card{transition:none}}
+
+
+/* Member tools: notices, honest daily activity, support and refresh */
+.dash-refresh{width:38px;height:38px;border:1px solid rgba(255,255,255,.22);border-radius:12px;background:rgba(255,255,255,.12);color:#fff;font-size:25px;line-height:1;cursor:pointer;transition:transform .2s,background .2s}
+.dash-refresh:hover{background:rgba(255,255,255,.22);transform:rotate(25deg)}
+.dash-refresh:disabled{opacity:.65;cursor:wait}
+.dash-refresh.is-loading{animation:dashRefreshSpin .8s linear infinite}
+@keyframes dashRefreshSpin{to{transform:rotate(360deg)}}
+.notice-panel{border-color:#f5d78a;background:linear-gradient(120deg,#fffaf0,#fff)}
+.notice-panel[hidden]{display:none!important}
+.notice-panel h2{color:#8a5a08}
+#member-notice-text{margin:14px 0 0;color:#674b1c;font-size:13px;line-height:1.8;white-space:pre-line;overflow-wrap:anywhere}
+.daily-progress-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:15px}
+.daily-progress-grid>div{display:flex;flex-direction:column;gap:6px;padding:16px;border:1px solid #e8edfa;border-radius:14px;background:linear-gradient(145deg,#fbfcff,#f2f5ff)}
+.daily-progress-grid strong{font-size:24px;color:#263c91}
+.daily-progress-grid span{font-size:11px;color:#75819e}
+.help-copy{font-size:12px;line-height:1.8;color:#687795}
+#help-center .offer-action{margin-top:2px}
+#help-center .offer-action-disabled{pointer-events:none}
+@media(max-width:760px){.dash-refresh{width:35px;height:35px}.daily-progress-grid{gap:7px}.daily-progress-grid>div{padding:12px 8px}.daily-progress-grid strong{font-size:20px}.daily-progress-grid span{font-size:9px}}
