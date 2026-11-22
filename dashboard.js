@@ -258,7 +258,12 @@
     renderActivity(ledger, conversions, withdrawals);
     await loadReferralInfo();
     renderWithdrawals(withdrawals);
-    renderInbox(withdrawals);
+    const inboxResult = await client.from("member_inbox")
+      .select("id,notification_type,title,message,amount,created_at,read_at")
+      .eq("user_id", user.id)
+      .order("created_at", {ascending:false})
+      .limit(100);
+    renderInbox(inboxResult.data || [], withdrawals, inboxResult.error);
     const offerResult = await client.from("offers").select("id,title,description,partner_name,destination_url,terms,created_at").eq("status","active").order("created_at",{ascending:false}).limit(30);
     renderOffers(offerResult.data || [], offerResult.error);
   }
@@ -299,10 +304,65 @@
     });
   }
 
-  function renderInbox(withdrawals) {
+  function renderInbox(notifications, withdrawals, inboxError) {
     const root = $("inbox-list");
     if (!root) return;
     root.replaceChildren();
+
+    const unread = notifications.filter(item => !item.read_at).length;
+    const count = $("inbox-unread-count");
+    if (count) {
+      count.hidden = unread === 0;
+      count.textContent = unread.toLocaleString("bn-BD");
+    }
+
+    if (inboxError) {
+      addText(root,"p","muted-message","আয়ের ইনবক্স এখনো প্রস্তুত নয়। ডেটাবেসে member_inbox.sql চালানো হয়েছে কি না যাচাই করুন।");
+    } else if (!notifications.length) {
+      addText(root,"p","muted-message","এখনো কোনো প্রকৃত আয়ের নোটিফিকেশন নেই। নতুন আয় হলে এখানে আলাদা রেকর্ড দেখা যাবে।");
+    } else {
+      notifications.forEach(item => {
+        const row = document.createElement("div");
+        row.className = "data-row income-inbox-row" + (item.read_at ? "" : " inbox-unread");
+        const info = document.createElement("div");
+        info.className = "data-row-info";
+        addText(info,"b","",item.title);
+        addText(info,"small","",item.message);
+        addText(info,"small","",dateText(item.created_at));
+        row.appendChild(info);
+        const right = document.createElement("div");
+        right.className = "inbox-row-actions";
+        addText(right,"strong","activity-amount positive","+" + money(item.amount));
+        if (!item.read_at) {
+          const readButton = addText(right,"button","inbox-read-button","পড়েছি");
+          readButton.type = "button";
+          readButton.addEventListener("click", async () => {
+            readButton.disabled = true;
+            const {error} = await client.rpc("mark_my_inbox_item_read",{p_inbox_id:item.id});
+            if (error) {
+              readButton.disabled = false;
+              alert("নোটিফিকেশন পড়া হিসেবে চিহ্নিত করা যায়নি: " + error.message);
+              return;
+            }
+            item.read_at = new Date().toISOString();
+            row.classList.remove("inbox-unread");
+            readButton.remove();
+            const nextUnread = Math.max(0, Number(count?.textContent.replace(/[^0-9]/g,"") || 0) - 1);
+            if (count) {
+              count.hidden = nextUnread === 0;
+              count.textContent = nextUnread.toLocaleString("bn-BD");
+            }
+          });
+        }
+        row.appendChild(right);
+        root.appendChild(row);
+      });
+    }
+
+    const paymentHeading = document.createElement("h3");
+    paymentHeading.className = "inbox-subheading";
+    paymentHeading.textContent = "উত্তোলন ও পেমেন্টের আপডেট";
+    root.appendChild(paymentHeading);
     if (!withdrawals.length) {
       addText(root,"p","muted-message","এখনো কোনো পেমেন্ট বা উইথড্রের হিসাব নেই।");
       return;
