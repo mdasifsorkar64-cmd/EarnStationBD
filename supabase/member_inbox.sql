@@ -77,7 +77,7 @@ begin
   if new.description ilike '%referral%' or new.description ilike '%রেফারেল%' then
     item_title := 'রেফারেল বোনাস যোগ হয়েছে';
     item_type := 'referral';
-  elsif new.description ilike '%ad%' or new.description ilike '%বিজ্ঞাপন%' then
+  elsif new.description ilike '%advert%' or new.description ilike '%বিজ্ঞাপন%' then
     item_title := 'বিজ্ঞাপন থেকে আয় যোগ হয়েছে';
     item_type := 'ad';
   elsif new.description ilike '%offer%' or new.description ilike '%অফার%' or new.description ilike '%commission%' or new.description ilike '%কমিশন%' then
@@ -100,6 +100,8 @@ begin
 end;
 $$;
 
+revoke all on function public.create_income_inbox_item() from public, anon, authenticated;
+
 drop trigger if exists trg_create_income_inbox_item on public.ledger_entries;
 create trigger trg_create_income_inbox_item
 after insert on public.ledger_entries
@@ -113,13 +115,13 @@ select
   le.id,
   case
     when le.description ilike '%referral%' or le.description ilike '%রেফারেল%' then 'referral'
-    when le.description ilike '%ad%' or le.description ilike '%বিজ্ঞাপন%' then 'ad'
+    when le.description ilike '%advert%' or le.description ilike '%বিজ্ঞাপন%' then 'ad'
     when le.description ilike '%offer%' or le.description ilike '%অফার%' or le.description ilike '%commission%' or le.description ilike '%কমিশন%' then 'offer'
     else 'earning'
   end,
   case
     when le.description ilike '%referral%' or le.description ilike '%রেফারেল%' then 'রেফারেল বোনাস যোগ হয়েছে'
-    when le.description ilike '%ad%' or le.description ilike '%বিজ্ঞাপন%' then 'বিজ্ঞাপন থেকে আয় যোগ হয়েছে'
+    when le.description ilike '%advert%' or le.description ilike '%বিজ্ঞাপন%' then 'বিজ্ঞাপন থেকে আয় যোগ হয়েছে'
     when le.description ilike '%offer%' or le.description ilike '%অফার%' or le.description ilike '%commission%' or le.description ilike '%কমিশন%' then 'অফার/কমিশন আয় যোগ হয়েছে'
     else 'নতুন আয় যোগ হয়েছে'
   end,
