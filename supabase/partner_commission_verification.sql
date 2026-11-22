@@ -31,7 +31,7 @@ begin
     raise exception 'Admin access required';
   end if;
 
-  if p_conversion_id is null or p_decision not in ('approved','rejected') then
+  if p_conversion_id is null or p_decision is null or p_decision not in ('approved','rejected') then
     raise exception 'Invalid conversion decision';
   end if;
 
