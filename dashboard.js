@@ -7,6 +7,7 @@
   let currentUser = null;
   let profileLocked = false;
   let currentAvailableBalance = 0;
+  let currentPayoutFee = 0;
   let latestWithdrawals = [];
 
   function setupSectionNavigation() {
@@ -191,14 +192,15 @@
     $("profile-email").value = user.email || "";
     const refreshButton = $("dashboard-refresh");
     if (refreshButton) { refreshButton.disabled = true; refreshButton.classList.add("is-loading"); }
-    const [profileResult, ledgerResult, conversionResult, withdrawalResult, financialResult] = await Promise.all([
+    const [profileResult, ledgerResult, conversionResult, withdrawalResult, financialResult, payoutFeeResult] = await Promise.all([
       client.from("profiles").select("full_name,phone,created_at,role,account_status").eq("id", user.id).maybeSingle(),
       client.from("ledger_entries").select("id,entry_type,amount,description,created_at,is_test,withdrawal_id").eq("user_id", user.id).order("created_at", {ascending:false}).limit(50),
       client.from("partner_conversions").select("id,partner_name,commission_amount,status,received_at").eq("user_id", user.id).order("received_at", {ascending:false}).limit(50),
-      client.from("withdrawal_requests").select("id,amount,payout_method,status,admin_note,created_at,expires_at,paid_at,refunded_at,is_test").eq("user_id", user.id).order("created_at", {ascending:false}).limit(30),
-      client.rpc("get_my_financial_summary")
+      client.from("withdrawal_requests").select("id,amount,payout_fee_bdt,payout_net_bdt,payout_method,status,admin_note,created_at,expires_at,paid_at,refunded_at,is_test").eq("user_id", user.id).order("created_at", {ascending:false}).limit(30),
+      client.rpc("get_my_financial_summary"),
+      client.rpc("get_member_payout_fee")
     ]);
-    const failed = [profileResult,ledgerResult,conversionResult,withdrawalResult,financialResult].find(result => result.error);
+    const failed = [profileResult,ledgerResult,conversionResult,withdrawalResult,financialResult,payoutFeeResult].find(result => result.error);
     if (failed) throw failed.error;
 
     const profile = profileResult.data;
@@ -220,6 +222,8 @@
     const ledger = ledgerResult.data || [];
     const conversions = conversionResult.data || [];
     const withdrawals = withdrawalResult.data || [];
+    currentPayoutFee = Number(payoutFeeResult.data || 0);
+    updateWithdrawalFeePreview();
     latestWithdrawals = withdrawals;
     const financial = Array.isArray(financialResult.data) ? financialResult.data[0] : financialResult.data;
     if (!financial) throw new Error("আপনার আয়ের হিসাব পাওয়া যায়নি। Supabase-এ financial_accounting_fix.sql চালানো হয়েছে কি না যাচাই করুন।");
@@ -298,6 +302,7 @@
       const info = document.createElement("div"); info.className="data-row-info";
       addText(info,"b","", (item.is_test ? "TEST · পরীক্ষামূলক · " : "") + (item.payout_method === "bkash" ? "বিকাশ" : "নগদ") + " · " + statusText(item.status));
       addText(info,"small","",dateText(item.created_at));
+      addText(info,"small","","মূল কর্তন "+money(item.amount)+" · চার্জ "+money(item.payout_fee_bdt)+" · হাতে পাবেন "+money(item.payout_net_bdt ?? item.amount));
       if (item.is_test) addText(info,"small","","পরীক্ষামূলক অনুরোধ—বাস্তব পেমেন্ট নয়। ৫ ঘণ্টা পরে স্বয়ংক্রিয় ফেরত হবে।");
       if (item.admin_note) addText(info,"small","", "প্রশাসকের নোট: " + item.admin_note);
       row.appendChild(info); addText(row,"strong","",money(item.amount)); root.appendChild(row);
@@ -407,6 +412,14 @@
   });
 
   const withdrawForm = $("withdraw-form");
+  function updateWithdrawalFeePreview() {
+    const amount = Number($("withdraw-amount")?.value || 0);
+    const fee = Number(currentPayoutFee || 0);
+    const net = Math.max(0, Math.round((amount-fee)*100)/100);
+    const note = $("withdraw-fee-note");
+    if (note) note.textContent = "প্রতি উত্তোলনে নির্ধারিত চার্জ "+money(fee)+"। আপনার ব্যালেন্স থেকে "+money(amount)+" কর্তন হবে; বিকাশ/নগদে পাঠানো হবে "+money(net)+"। চার্জটি আপনার পুরস্কার থেকেই সমন্বয় হবে।";
+  }
+  $("withdraw-amount").addEventListener("input",updateWithdrawalFeePreview);
   const withdrawMessage = (text,type="") => { $("withdraw-message").textContent=text; $("withdraw-message").className="withdraw-message "+type; };
   withdrawForm.addEventListener("submit", async (event) => {
     event.preventDefault();
