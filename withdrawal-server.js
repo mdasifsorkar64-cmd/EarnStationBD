@@ -83,7 +83,7 @@ const server = http.createServer(async (req, res) => {
       await requireAdmin(authorization);
       if (isAdminList) {
         const headers = { apikey: SUPABASE_ANON_KEY, Authorization: authorization };
-        const wr = await fetch(BASE() + "/rest/v1/withdrawal_requests?select=id,user_id,amount,payout_method,payout_account_ciphertext,status,is_test,admin_note,created_at,expires_at,paid_at,refunded_at,payment_transaction_id&order=created_at.desc&limit=100", { headers });
+        const wr = await fetch(BASE() + "/rest/v1/withdrawal_requests?select=id,user_id,amount,payout_fee_bdt,payout_net_bdt,payout_method,payout_account_ciphertext,status,is_test,admin_note,created_at,expires_at,paid_at,refunded_at,payment_transaction_id&order=created_at.desc&limit=100", { headers });
         const withdrawals = await wr.json();
         if (!wr.ok) return json(res, 400, { error: "উইথড্র তালিকা লোড করা যায়নি।" });
         const ids = [...new Set(withdrawals.map(x => x.user_id))];
@@ -95,7 +95,7 @@ const server = http.createServer(async (req, res) => {
         }
         const byId = new Map(profiles.map(p => [p.id, p]));
         const result = withdrawals.map(w => ({
-          id: w.id, user_id: w.user_id, amount: w.amount, payout_method: w.payout_method,
+          id: w.id, user_id: w.user_id, amount: w.amount, payout_fee_bdt: Number(w.payout_fee_bdt||0), payout_net_bdt: Number(w.payout_net_bdt ?? w.amount), payout_method: w.payout_method,
           payout_account: decryptAccount(w.payout_account_ciphertext), status: w.status, is_test: !!w.is_test,
           admin_note: w.admin_note, created_at: w.created_at, expires_at: w.expires_at,
           paid_at: w.paid_at, refunded_at: w.refunded_at, member: byId.get(w.user_id) || {}
@@ -148,7 +148,7 @@ const server = http.createServer(async (req, res) => {
     }
     return json(res, 200, {
       success: true, request_id: result,
-      message: "উত্তোলনের অনুরোধ জমা হয়েছে। সর্বোচ্চ ৫ ঘণ্টার মধ্যে পেমেন্ট সম্পন্ন করা হবে, ইনশাআল্লাহ।"
+      message: "উত্তোলনের অনুরোধ জমা হয়েছে। আপনার ব্যালেন্স থেকে চার্জসহ মোট কর্তন হবে; নেট পেমেন্ট ও চার্জ ইতিহাসে দেখা যাবে। সর্বোচ্চ ৫ ঘণ্টার মধ্যে পেমেন্ট সম্পন্ন করা হবে, ইনশাআল্লাহ।"
     });
   } catch (error) {
     const message = error.message === "Unexpected end of JSON input" ? "সঠিক তথ্য পাঠান।" :
