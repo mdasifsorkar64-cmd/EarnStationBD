@@ -99,6 +99,11 @@ const server = http.createServer(async (req, res) => {
       },
       body: JSON.stringify(record)
     });
+    if (response.status === 409) {
+      // A uniqueness conflict means this signed conversion/request was already recorded.
+      // Acknowledge duplicates so the provider does not keep retrying them.
+      return respond(res, 200, "Duplicate ignored");
+    }
     if (!response.ok) {
       // 5xx causes AdGem to retry; don't acknowledge a failed database write.
       return respond(res, 503, "Event storage failed");
