@@ -48,7 +48,35 @@
     }catch(e){$("settings-status").textContent=e.message||"সেটিংস সংরক্ষণ করা যায়নি。";message(e.message||"সেটিংস সংরক্ষণ করা যায়নি।",true);}
     finally{$("save-settings").disabled=false;}
   });
-  $("refresh-settings").addEventListener("click",()=>Promise.all([loadSettings(),loadReferralSettings()]).catch(e=>message(e.message,true)));
+  $("refresh-settings").addEventListener("click",()=>Promise.all([loadSettings(),loadReferralSettings(),loadCommissionSplit()]).catch(e=>message(e.message,true)));
+  async function loadCommissionSplit(){
+    $("commission-split-status").textContent="কমিশন ভাগ লোড হচ্ছে...";
+    const {data,error}=await client.rpc("admin_get_commission_split");if(error)throw error;
+    const row=Array.isArray(data)?data[0]:data;if(!row)throw new Error("কমিশন ভাগের সেটিংস পাওয়া যায়নি।");
+    $("member-reward-percent").value=row.member_reward_percent;
+    $("owner-share-preview").textContent="আপনার প্রাথমিক অংশ: "+Number(row.owner_share_percent).toLocaleString("bn-BD")+"%";
+    $("commission-split-status").textContent="কমিশন ভাগ লোড হয়েছে।";
+  }
+  $("member-reward-percent").addEventListener("input",()=>{
+    const n=Number($("member-reward-percent").value);
+    $("owner-share-preview").textContent=Number.isInteger(n)&&n>=1&&n<=99
+      ?"আপনার প্রাথমিক অংশ: "+(100-n).toLocaleString("bn-BD")+"%"
+      :"১–৯৯ এর মধ্যে পূর্ণ শতাংশ লিখুন।";
+  });
+  $("commission-split-form").addEventListener("submit",async event=>{
+    event.preventDefault();
+    const memberPercent=Number($("member-reward-percent").value);
+    if(!Number.isInteger(memberPercent)||memberPercent<1||memberPercent>99){
+      $("commission-split-status").textContent="সদস্যের শতাংশ ১–৯৯ পূর্ণ সংখ্যা হতে হবে।";return;
+    }
+    if(!confirm("সদস্যদের "+memberPercent+"% এবং আপনার প্রাথমিক অংশ "+(100-memberPercent)+"% সংরক্ষণ করবেন? এটি আগের অনুমোদিত আয় পরিবর্তন করবে না।"))return;
+    $("save-commission-split").disabled=true;
+    try{
+      const {error}=await client.rpc("admin_update_commission_split",{p_member_reward_percent:memberPercent});if(error)throw error;
+      await loadCommissionSplit();message("কমিশন ভাগ সংরক্ষিত হয়েছে।");
+    }catch(e){$("commission-split-status").textContent=e.message||"কমিশন ভাগ সংরক্ষণ হয়নি।";message(e.message||"কমিশন ভাগ সংরক্ষণ হয়নি।",true);}
+    finally{$("save-commission-split").disabled=false;}
+  });
   async function loadReferralSettings(){
     const {data,error}=await client.rpc("admin_get_referral_settings");if(error)throw error;
     const row=Array.isArray(data)?data[0]:data;if(!row)throw new Error("রেফারেল সেটিংস পাওয়া যায়নি।");
@@ -113,6 +141,20 @@ async function loadOffers(){
       const actions=el("div","admin-row-actions");if(item.status==="pending"){actions.append(button("অনুমোদন",()=>reviewConversion(item.id,"approved"),"active"),button("বাতিল",()=>reviewConversion(item.id,"rejected"),"rejected"));}row.append(actions);root.append(row);});
   }
   async function reviewConversion(id,decision){if(!confirm(decision==="approved"?"যাচাইকৃত কনভার্সন অনুমোদন করবেন? কমিশন একবার লেজারে যোগ হবে।":"এই কনভার্সন বাতিল করবেন?"))return;message("কনভার্সন পর্যালোচনা হচ্ছে...");const {error}=await client.rpc("admin_review_conversion",{p_conversion_id:id,p_decision:decision,p_note:""});if(error)throw error;message("কনভার্সন পর্যালোচনা সম্পন্ন।");await loadConversions();}
+  async function loadPartnerPostbacks(){
+    const root=$("partner-postback-events");root.textContent="স্বাক্ষর-যাচাইকৃত callback লোড হচ্ছে...";
+    const {data,error}=await client.rpc("admin_get_partner_postback_events");if(error)throw error;
+    root.replaceChildren();
+    if(!data?.length){root.textContent="এখনো কোনো যাচাইকৃত AdGem Postback আসেনি।";return;}
+    data.forEach(item=>{
+      const row=el("div","admin-row"),info=el("div","admin-row-main");
+      info.append(el("b","",item.partner_name+" · $"+Number(item.payout_usd||0).toFixed(4)+" USD"),
+        el("small","","কনভার্সন: "+item.external_conversion_id),
+        el("small","","সদস্য ID: "+String(item.player_id||"").slice(0,8)+"… · "+statusBn(item.event_status)),
+        el("small","","ভার্চুয়াল পরিমাণ: "+Number(item.virtual_amount||0)+" · "+fmt(item.event_timestamp)));
+      row.append(info);root.append(row);
+    });
+  }
   async function loadWithdrawals(){
     $("withdrawals-list").textContent="লোড হচ্ছে...";
     const {data:{session}}=await client.auth.getSession();
@@ -159,7 +201,7 @@ async function loadOffers(){
   }
   $("offer-form").addEventListener("submit",async event=>{event.preventDefault();const form=event.currentTarget,data=Object.fromEntries(new FormData(form).entries());try{const url=new URL(data.destination_url);if(!["https:","http:"].includes(url.protocol))throw new Error("শুধু HTTP/HTTPS লিংক ব্যবহার করুন।");$("offer-submit").disabled=true;message("অফার সংরক্ষণ হচ্ছে...");const {error}=await client.from("offers").insert({...data,status:"pending"});if(error)throw error;form.reset();message("অফার সংরক্ষিত হয়েছে। Pending অবস্থায় রাখা হয়েছে।");await loadOffers();}catch(e){message(e.message||"অফার সংরক্ষণ করা যায়নি।",true);}finally{$("offer-submit").disabled=false;}});
   $("refresh-offers").addEventListener("click",()=>loadOffers().catch(e=>message(e.message,true)));
-  $("refresh-conversions").addEventListener("click",()=>loadConversions().catch(e=>message(e.message,true)));
+  $("refresh-conversions").addEventListener("click",()=>Promise.all([loadConversions(),loadPartnerPostbacks()]).catch(e=>message(e.message,true)));
   $("refresh-withdrawals").addEventListener("click",()=>loadWithdrawals().catch(e=>message(e.message,true)));
 
   async function loadCommunitySettings(){
@@ -196,7 +238,7 @@ async function loadOffers(){
   }catch(e){$("site-status").textContent=e.message||"সংরক্ষণ করা যায়নি।";message(e.message||"সংরক্ষণ করা যায়নি।",true);}finally{$("save-site").disabled=false;}});
   $("refresh-site").addEventListener("click",()=>loadSiteSettings().catch(e=>message(e.message,true)));
 
-  async function refreshAll(){try{await Promise.all([loadMembers(),loadOffers(),loadConversions(),loadWithdrawals(),loadSettings(),loadSiteSettings(),loadReferralSettings()]);message("সব তথ্য আপডেট হয়েছে।");}catch(e){message(e.message||"তথ্য লোড করা যায়নি।",true);}}
+  async function refreshAll(){try{await Promise.all([loadMembers(),loadOffers(),loadConversions(),loadPartnerPostbacks(),loadWithdrawals(),loadSettings(),loadSiteSettings(),loadReferralSettings(),loadCommissionSplit()]);message("সব তথ্য আপডেট হয়েছে।");}catch(e){message(e.message||"তথ্য লোড করা যায়নি।",true);}}
   $("refresh-all").addEventListener("click",refreshAll);
   (async()=>{try{const {data,error}=await client.auth.getSession();if(error)throw error;if(!data.session){location.replace("auth.html");return;}const {data:profile,error:pe}=await client.from("profiles").select("role").eq("id",data.session.user.id).single();if(pe)throw pe;if(profile?.role!=="admin"){location.replace("dashboard.html");return;}
     $("admin-top").hidden=false;$("admin-content").hidden=false;$("admin-footer").hidden=false;message("অ্যাডমিন যাচাই সফল।");await refreshAll();
