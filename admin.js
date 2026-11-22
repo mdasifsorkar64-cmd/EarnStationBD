@@ -24,6 +24,25 @@
     "withdrawals-stat-card":()=>{navigateView("withdrawals");loadWithdrawals().catch(e=>message(e.message||"উত্তোলন তালিকা লোড হয়নি।",true));}
   };
   Object.entries(statCardActions).forEach(([id,action])=>{const card=$(id);card.addEventListener("click",action);card.addEventListener("keydown",event=>{if(event.key==="Enter"||event.key===" "){event.preventDefault();action();}});});
+  async function loadMemberPayoutFee(){
+    const {data,error}=await client.rpc("get_member_payout_fee");if(error)throw error;
+    $("member-payout-fee").value=Number(data||0).toFixed(2);
+    $("member-payout-fee-status").textContent="বর্তমান সদস্য পেমেন্ট চার্জ লোড হয়েছে।";
+  }
+  async function loadAdminMemberPayoutFee(){
+    const {data,error}=await client.rpc("admin_get_member_payout_fee");if(error)throw error;
+    $("member-payout-fee").value=Number(data||0).toFixed(2);
+    $("member-payout-fee-status").textContent="বর্তমান সদস্য পেমেন্ট চার্জ লোড হয়েছে।";
+  }
+  $("member-payout-fee-form").addEventListener("submit",async event=>{
+    event.preventDefault();const fee=Number($("member-payout-fee").value);
+    if(!Number.isFinite(fee)||fee<0||fee>100||Math.round(fee*100)!==fee*100){$("member-payout-fee-status").textContent="০–১০০ টাকার মধ্যে সর্বোচ্চ ২ দশমিকসহ চার্জ লিখুন।";return;}
+    if(!confirm("প্রতি উত্তোলনে সদস্যের পুরস্কার থেকে ৳"+fee.toFixed(2)+" চার্জ কর্তন করবেন?"))return;
+    $("save-member-payout-fee").disabled=true;
+    try{const {error}=await client.rpc("admin_update_member_payout_fee",{p_fee_bdt:fee});if(error)throw error;await loadAdminMemberPayoutFee();message("সদস্যের পেমেন্ট চার্জ সংরক্ষিত হয়েছে।");}
+    catch(e){$("member-payout-fee-status").textContent=e.message||"চার্জ সংরক্ষণ হয়নি।";message(e.message||"চার্জ সংরক্ষণ হয়নি।",true);}
+    finally{$("save-member-payout-fee").disabled=false;}
+  });
   async function loadSettings(){
     $("settings-status").textContent="সেটিংস লোড হচ্ছে...";
     const {data,error}=await client.rpc("admin_get_platform_settings");
@@ -48,7 +67,7 @@
     }catch(e){$("settings-status").textContent=e.message||"সেটিংস সংরক্ষণ করা যায়নি。";message(e.message||"সেটিংস সংরক্ষণ করা যায়নি।",true);}
     finally{$("save-settings").disabled=false;}
   });
-  $("refresh-settings").addEventListener("click",()=>Promise.all([loadSettings(),loadReferralSettings(),loadCommissionSplit()]).catch(e=>message(e.message,true)));
+  $("refresh-settings").addEventListener("click",()=>Promise.all([loadSettings(),loadReferralSettings(),loadCommissionSplit(),loadAdminMemberPayoutFee()]).catch(e=>message(e.message,true)));
   async function loadCommissionSplit(){
     $("commission-split-status").textContent="কমিশন ভাগ লোড হচ্ছে...";
     const {data,error}=await client.rpc("admin_get_commission_split");if(error)throw error;
@@ -239,7 +258,7 @@ async function loadOffers(){
   }catch(e){$("site-status").textContent=e.message||"সংরক্ষণ করা যায়নি।";message(e.message||"সংরক্ষণ করা যায়নি।",true);}finally{$("save-site").disabled=false;}});
   $("refresh-site").addEventListener("click",()=>loadSiteSettings().catch(e=>message(e.message,true)));
 
-  async function refreshAll(){try{await Promise.all([loadMembers(),loadOffers(),loadConversions(),loadPartnerPostbacks(),loadWithdrawals(),loadSettings(),loadSiteSettings(),loadReferralSettings(),loadCommissionSplit()]);message("সব তথ্য আপডেট হয়েছে।");}catch(e){message(e.message||"তথ্য লোড করা যায়নি।",true);}}
+  async function refreshAll(){try{await Promise.all([loadMembers(),loadOffers(),loadConversions(),loadPartnerPostbacks(),loadWithdrawals(),loadSettings(),loadSiteSettings(),loadReferralSettings(),loadCommissionSplit(),loadAdminMemberPayoutFee()]);message("সব তথ্য আপডেট হয়েছে।");}catch(e){message(e.message||"তথ্য লোড করা যায়নি।",true);}}
   $("refresh-all").addEventListener("click",refreshAll);
   (async()=>{try{const {data,error}=await client.auth.getSession();if(error)throw error;if(!data.session){location.replace("auth.html");return;}const {data:profile,error:pe}=await client.from("profiles").select("role").eq("id",data.session.user.id).single();if(pe)throw pe;if(profile?.role!=="admin"){location.replace("dashboard.html");return;}
     $("admin-top").hidden=false;$("admin-content").hidden=false;$("admin-footer").hidden=false;message("অ্যাডমিন যাচাই সফল।");await refreshAll();
