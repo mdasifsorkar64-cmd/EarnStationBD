@@ -6,6 +6,15 @@
 -- Preserves real/test balance separation, immediate gross ledger debit,
 -- member-funded fee, one request per Dhaka day, and Transaction ID payment flow.
 
+-- The live database did not yet have the member fee setting column.
+alter table public.platform_settings
+  add column if not exists member_payout_fee_bdt numeric(8,2) not null default 0;
+alter table public.platform_settings
+  drop constraint if exists platform_settings_member_payout_fee_bdt_check;
+alter table public.platform_settings
+  add constraint platform_settings_member_payout_fee_bdt_check
+  check (member_payout_fee_bdt between 0 and 100);
+
 alter table public.ledger_entries
   add column if not exists is_test boolean not null default false,
   add column if not exists withdrawal_id uuid references public.withdrawal_requests(id);
@@ -297,5 +306,59 @@ $$;
 
 revoke all on function public.admin_complete_withdrawal(uuid,text) from public,anon;
 grant execute on function public.admin_complete_withdrawal(uuid,text) to authenticated;
+
+
+-- Keep the existing member/admin fee controls working after this migration.
+create or replace function public.get_member_payout_fee()
+returns numeric
+language sql
+security definer
+set search_path=public
+as $$
+  select coalesce(s.member_payout_fee_bdt,0)
+  from public.platform_settings s
+  where s.id=true and auth.uid() is not null;
+$$;
+revoke all on function public.get_member_payout_fee() from public,anon;
+grant execute on function public.get_member_payout_fee() to authenticated;
+
+create or replace function public.admin_get_member_payout_fee()
+returns numeric
+language plpgsql
+security definer
+set search_path=public
+as $$
+begin
+  if not public.is_admin() then raise exception 'Admin access required'; end if;
+  return (select coalesce(s.member_payout_fee_bdt,0)
+    from public.platform_settings s where s.id=true);
+end;
+$$;
+revoke all on function public.admin_get_member_payout_fee() from public,anon;
+grant execute on function public.admin_get_member_payout_fee() to authenticated;
+
+create or replace function public.admin_update_member_payout_fee(p_fee_bdt numeric)
+returns void
+language plpgsql
+security definer
+set search_path=public
+as $$
+begin
+  if not public.is_admin() then raise exception 'Admin access required'; end if;
+  if p_fee_bdt is null or p_fee_bdt<0 or p_fee_bdt>100
+     or round(p_fee_bdt,2)<>p_fee_bdt then
+    raise exception 'Payout fee must be between 0 and 100 BDT, up to 2 decimals';
+  end if;
+  update public.platform_settings
+     set member_payout_fee_bdt=p_fee_bdt,updated_at=now(),updated_by=auth.uid()
+   where id=true;
+  insert into public.admin_audit_log(admin_id,action,details)
+  values(auth.uid(),'member_payout_fee_updated',
+    jsonb_build_object('fee_bdt',p_fee_bdt,
+      'note','Fixed payout processing charge; member deduction at withdrawal only'));
+end;
+$$;
+revoke all on function public.admin_update_member_payout_fee(numeric) from public,anon;
+grant execute on function public.admin_update_member_payout_fee(numeric) to authenticated;
 
 notify pgrst,'reload schema';
