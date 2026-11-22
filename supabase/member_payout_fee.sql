@@ -131,3 +131,20 @@ revoke all on function public.request_withdrawal(numeric,text,text) from public;
 grant execute on function public.request_withdrawal(numeric,text,text) to authenticated;
 
 notify pgrst,'reload schema';
+
+-- Admin-only read RPC for the payout-fee control in the dashboard.
+create or replace function public.admin_get_member_payout_fee()
+returns numeric
+language plpgsql
+security definer
+set search_path=public
+as $$
+begin
+  if not public.is_admin() then raise exception 'Admin access required'; end if;
+  return (select coalesce(s.member_payout_fee_bdt,0)
+    from public.platform_settings s where s.id=true);
+end;
+$$;
+revoke all on function public.admin_get_member_payout_fee() from public,anon;
+grant execute on function public.admin_get_member_payout_fee() to authenticated;
+notify pgrst,'reload schema';
