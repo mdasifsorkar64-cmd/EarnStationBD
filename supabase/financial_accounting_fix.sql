@@ -20,6 +20,7 @@ as $$
           when l.entry_type = 'credit'
             and l.is_test = false
             and l.withdrawal_id is null
+            and l.description not ilike 'উত্তোলন REFUNDED%'
           then l.amount
           else 0
         end
