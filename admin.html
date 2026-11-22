@@ -91,6 +91,12 @@
 <p class="admin-help">শুধু পার্টনারের নিশ্চিত মোট কমিশন থেকে ভাগ হবে। সদস্যের অংশ লেজারে যাবে; মালিকের অংশ আলাদা pending হিসাব থাকবে। পার্টনার পেমেন্ট ও প্রকৃত খরচ যাচাই না হওয়া পর্যন্ত এটি নিশ্চিত নিট লাভ নয়।</p>
 </form>
 <div id="commission-split-status" class="admin-message" role="status">কমিশন ভাগ লোড হচ্ছে...</div>
+<div class="admin-panel">
+<div class="view-heading"><div><p>MEMBER PAYOUT RECONCILIATION</p><h3>সদস্যদের ৬০% কমিশন ও উত্তোলন</h3><span>SUCCESS নিশ্চিত হলে সদস্যদের বরাদ্দ থেকে মোট উত্তোলন কমবে</span></div><button type="button" class="secondary" id="refresh-member-commission-balance">↻ হিসাব রিফ্রেশ</button></div>
+<div id="member-commission-balance" class="referral-admin-stats">সদস্য কমিশনের হিসাব লোড হচ্ছে...</div>
+<p class="admin-help">SUCCESS/paid হওয়া বাস্তব উইথড্রের সম্পূর্ণ মোট পরিমাণ বরাদ্দ ৬০% থেকে বিয়োগ হবে। Pending আলাদা থাকবে। এটি অ্যাডমিনের হিসাব-দর্শন; সদস্যের লেজার থেকে দ্বিতীয়বার টাকা কাটে না।</p>
+<div id="member-commission-balance-status" class="admin-message" role="status"></div>
+</div>
 <div class="admin-panel"><div class="view-heading"><div><p>MEMBER PAYOUT COST</p><h3>সদস্যের পেমেন্ট চার্জ</h3><span>প্রতি উত্তোলনে নির্দিষ্ট চার্জ</span></div></div>
 <form id="member-payout-fee-form" class="admin-form"><label>বিকাশ/নগদ পেমেন্ট চার্জ (৳)<input id="member-payout-fee" type="number" min="0" max="100" step="0.01" value="0" required></label><button type="submit" id="save-member-payout-fee">পেমেন্ট চার্জ সংরক্ষণ</button><p class="admin-help">চার্জটি সদস্যের মোট উত্তোলনযোগ্য পুরস্কার থেকে একবার কর্তন হবে। অ্যাডমিন এই পরিমাণ প্রকৃত Send Money চার্জ যাচাই করে নির্ধারণ করবেন। সদস্যকে নেট টাকা পাঠাতে হবে; মালিকের কমিশন ভাগে এটি পরিবর্তন হবে না।</p></form><div id="member-payout-fee-status" class="admin-message" role="status">চার্জ লোড হচ্ছে...</div></div>
 </div>
