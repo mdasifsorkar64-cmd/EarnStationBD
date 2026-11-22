@@ -170,9 +170,10 @@ async function loadOffers(){
       const row=el("div","admin-row"),info=el("div","admin-row-main");
       const member=w.member||{};
       info.append(
-        el("b","", (w.is_test?"[TEST] পরীক্ষামূলক · ":"")+money(w.amount)+" · "+(w.payout_method==="bkash"?"বিকাশ":"নগদ")+" · "+statusBn(w.status)),
+        el("b","", (w.is_test?"[TEST] পরীক্ষামূলক · ":"")+"কর্তন "+money(w.amount)+" · "+(w.payout_method==="bkash"?"বিকাশ":"নগদ")+" · "+statusBn(w.status)),
         el("small","","সদস্য: "+(member.full_name||"নাম নেই")+" · "+(member.phone||"ফোন নেই")),
         el("small","","পেমেন্ট নম্বর: "+w.payout_account),
+        el("small","","চার্জ: "+money(w.payout_fee_bdt)+" · সদস্য পাবেন: "+money(w.payout_net_bdt ?? w.amount)),
         el("small","","User ID: "+w.user_id),
         el("small","","উইথড্রের সময়: "+fmt(w.created_at)+" · শেষ সময়: "+fmt(w.expires_at))
       );
@@ -188,7 +189,7 @@ async function loadOffers(){
           if(transactionId===null)return;
           const cleanTransactionId=transactionId.trim();
           if(cleanTransactionId.length<4||cleanTransactionId.length>100){throw new Error("সঠিক Transaction ID লিখুন (৪–১০০ অক্ষর)।");}
-          if(!confirm("সদস্যকে "+money(w.amount)+" সত্যিই পাঠানো হয়েছে এবং Transaction ID "+cleanTransactionId+" সঠিক? শুধু টাকা পাঠানোর পর SUCCESS করুন।"))return;
+          if(!confirm("সদস্যকে "+money(w.payout_net_bdt ?? w.amount)+" সত্যিই পাঠানো হয়েছে এবং Transaction ID "+cleanTransactionId+" সঠিক? শুধু টাকা পাঠানোর পর SUCCESS করুন।"))return;
           const {data:{session:active}}=await client.auth.getSession();
           const res=await fetch("http://127.0.0.1:3001/api/admin/withdrawals/complete",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+active.access_token},body:JSON.stringify({withdrawal_id:w.id,transaction_id:cleanTransactionId})});
           const out=await res.json();if(!res.ok)throw new Error(out.error||"স্ট্যাটাস আপডেট হয়নি।");
