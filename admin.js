@@ -76,6 +76,30 @@
     $("owner-share-preview").textContent="আপনার প্রাথমিক অংশ: "+Number(row.owner_share_percent).toLocaleString("bn-BD")+"%";
     $("commission-split-status").textContent="কমিশন ভাগ লোড হয়েছে।";
   }
+  async function loadMemberCommissionBalance(){
+    const root=$("member-commission-balance"),status=$("member-commission-balance-status");
+    if(!root)return;
+    root.textContent="কমিশন ও SUCCESS উত্তোলনের হিসাব লোড হচ্ছে...";
+    try{
+      const {data,error}=await client.rpc("admin_get_member_commission_balance");if(error)throw error;
+      const row=Array.isArray(data)?data[0]:data;
+      if(!row)throw new Error("কমিশনের হিসাব পাওয়া যায়নি।");
+      const allocated=Number(row.member_commission_allocated_bdt||0);
+      const paid=Number(row.withdrawals_paid_bdt||0);
+      const pending=Number(row.withdrawals_pending_bdt||0);
+      const remaining=Number(row.member_commission_remaining_bdt||0);
+      root.replaceChildren();
+      [["মোট সদস্য-কমিশন বরাদ্দ",allocated],["SUCCESS হওয়া মোট উত্তোলন",paid],["এখনো Pending উত্তোলন",pending],["উত্তোলনের পর অবশিষ্ট সদস্য-কমিশন",remaining]].forEach(([label,value])=>{
+        const card=el("div","admin-stat");card.append(el("small","",label),el("strong","",money(value)));root.append(card);
+      });
+      status.textContent=remaining<0?"সতর্কতা: পরিশোধিত উত্তোলন বরাদ্দের চেয়ে বেশি; আর্থিক হিসাব যাচাই করুন।":"SUCCESS পেমেন্টের হিসাব আপডেট হয়েছে।";
+    }catch(e){
+      root.textContent="এই হিসাব দেখাতে Supabase-এ supabase/admin_member_commission_balance.sql migration প্রয়োগ করতে হবে।";
+      status.textContent=e.message||"কমিশনের হিসাব লোড হয়নি।";
+    }
+  }
+  $("refresh-member-commission-balance")?.addEventListener("click",()=>loadMemberCommissionBalance());
+
   $("member-reward-percent").addEventListener("input",()=>{
     const n=Number($("member-reward-percent").value);
     $("owner-share-preview").textContent=Number.isInteger(n)&&n>=1&&n<=99
@@ -92,7 +116,7 @@
     $("save-commission-split").disabled=true;
     try{
       const {error}=await client.rpc("admin_update_commission_split",{p_member_reward_percent:memberPercent});if(error)throw error;
-      await loadCommissionSplit();message("কমিশন ভাগ সংরক্ষিত হয়েছে।");
+      await loadCommissionSplit();await loadMemberCommissionBalance();message("কমিশন ভাগ সংরক্ষিত হয়েছে।");
     }catch(e){$("commission-split-status").textContent=e.message||"কমিশন ভাগ সংরক্ষণ হয়নি।";message(e.message||"কমিশন ভাগ সংরক্ষণ হয়নি।",true);}
     finally{$("save-commission-split").disabled=false;}
   });
@@ -213,7 +237,7 @@ async function loadOffers(){
           const res=await fetch("http://127.0.0.1:3001/api/admin/withdrawals/complete",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+active.access_token},body:JSON.stringify({withdrawal_id:w.id,transaction_id:cleanTransactionId})});
           const out=await res.json();if(!res.ok)throw new Error(out.error||"স্ট্যাটাস আপডেট হয়নি।");
           message(out.status==="refunded"?"৫ ঘণ্টা পার হয়েছে—টাকা সদস্যকে ফেরত দেওয়া হয়েছে।":"পেমেন্ট SUCCESS হিসেবে সংরক্ষিত হয়েছে।");
-          await loadWithdrawals();
+          await loadWithdrawals();await loadMemberCommissionBalance();
         },"active"));
       }
       root.append(row);
@@ -258,7 +282,7 @@ async function loadOffers(){
   }catch(e){$("site-status").textContent=e.message||"সংরক্ষণ করা যায়নি।";message(e.message||"সংরক্ষণ করা যায়নি।",true);}finally{$("save-site").disabled=false;}});
   $("refresh-site").addEventListener("click",()=>loadSiteSettings().catch(e=>message(e.message,true)));
 
-  async function refreshAll(){try{await Promise.all([loadMembers(),loadOffers(),loadConversions(),loadPartnerPostbacks(),loadWithdrawals(),loadSettings(),loadSiteSettings(),loadReferralSettings(),loadCommissionSplit(),loadAdminMemberPayoutFee()]);message("সব তথ্য আপডেট হয়েছে।");}catch(e){message(e.message||"তথ্য লোড করা যায়নি।",true);}}
+  async function refreshAll(){try{await Promise.all([loadMembers(),loadOffers(),loadConversions(),loadPartnerPostbacks(),loadWithdrawals(),loadSettings(),loadSiteSettings(),loadReferralSettings(),loadCommissionSplit(),loadAdminMemberPayoutFee(),loadMemberCommissionBalance()]);message("সব তথ্য আপডেট হয়েছে।");}catch(e){message(e.message||"তথ্য লোড করা যায়নি।",true);}}
   $("refresh-all").addEventListener("click",refreshAll);
   (async()=>{try{const {data,error}=await client.auth.getSession();if(error)throw error;if(!data.session){location.replace("auth.html");return;}const {data:profile,error:pe}=await client.from("profiles").select("role").eq("id",data.session.user.id).single();if(pe)throw pe;if(profile?.role!=="admin"){location.replace("dashboard.html");return;}
     $("admin-top").hidden=false;$("admin-content").hidden=false;$("admin-footer").hidden=false;message("অ্যাডমিন যাচাই সফল।");await refreshAll();
