@@ -309,7 +309,7 @@
     if (!root) return;
     root.replaceChildren();
 
-    const unread = notifications.filter(item => !item.read_at).length;
+    let unread = notifications.filter(item => !item.read_at).length;
     const count = $("inbox-unread-count");
     if (count) {
       count.hidden = unread === 0;
@@ -347,10 +347,10 @@
             item.read_at = new Date().toISOString();
             row.classList.remove("inbox-unread");
             readButton.remove();
-            const nextUnread = Math.max(0, Number(count?.textContent.replace(/[^0-9]/g,"") || 0) - 1);
+            unread = Math.max(0, unread - 1);
             if (count) {
-              count.hidden = nextUnread === 0;
-              count.textContent = nextUnread.toLocaleString("bn-BD");
+              count.hidden = unread === 0;
+              count.textContent = unread.toLocaleString("bn-BD");
             }
           });
         }
