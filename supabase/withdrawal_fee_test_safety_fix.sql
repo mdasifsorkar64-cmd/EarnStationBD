@@ -37,13 +37,14 @@ create unique index if not exists withdrawal_payment_txn_unique
   on public.withdrawal_requests(payout_method, lower(payment_transaction_id))
   where payment_transaction_id is not null;
 
--- Earlier debit backfills did not copy the TEST marker. Repair those rows.
+-- Reconcile every withdrawal-linked ledger row (debit AND refund credit)
+-- to the authoritative withdrawal flag. This repairs historical test refunds
+-- as well as any incorrectly marked real-withdrawal ledger rows.
 update public.ledger_entries l
-set is_test = true
+set is_test = coalesce(w.is_test, false)
 from public.withdrawal_requests w
 where l.withdrawal_id = w.id
-  and coalesce(w.is_test, false) = true
-  and l.is_test = false;
+  and l.is_test is distinct from coalesce(w.is_test, false);
 
 -- Atomically debit the gross amount once. A request uses either real balance
 -- or test balance; test money can never be paid out as real money.
