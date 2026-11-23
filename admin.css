@@ -57,3 +57,5 @@
 .presence-badge.is-online{color:#0b9b68}
 .presence-badge.is-offline{color:#8992a8}
 .member-presence-note{margin:-2px 0 14px;padding:0 2px}
+
+.owner-wallet-stats{margin-top:12px}.owner-wallet-stats .stat-card strong{font-size:19px}.admin-form select{width:100%;padding:11px 12px;border:1px solid #dce3f1;border-radius:10px;background:#fbfcff;color:#1e2b57;font:inherit;font-size:12px}
