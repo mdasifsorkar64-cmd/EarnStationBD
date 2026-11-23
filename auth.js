@@ -26,7 +26,7 @@
 
   // Convert Supabase Auth / Postgres errors into clear Bengali messages.
   function friendlyAuthError(error) {
-    const raw = String(error?.message || "").toLowerCase();
+    const raw = [error?.message, error?.details, error?.hint, error?.code].filter(Boolean).join(" ").toLowerCase();
     const code = String(error?.code || error?.status || "");
 
     if (/invalid login credentials|invalid email or password/.test(raw)) {
@@ -38,8 +38,8 @@
     if (/user already registered|already been registered|already registered/.test(raw)) {
       return "এই ইমেইল দিয়ে আগে থেকেই একটি অ্যাকাউন্ট রয়েছে। লগইন করুন অথবা পাসওয়ার্ড রিসেট করুন।";
     }
-    if (/phone number.*(already|registered)|user with this phone.*exists/.test(raw)) {
-      return "এই মোবাইল নম্বরটি আগে থেকেই ব্যবহৃত হয়েছে। অন্য নম্বর ব্যবহার করুন।";
+    if (/profiles_phone_key|duplicate key.*phone|phone number.*(already|registered)|user with this phone.*exists/.test(raw)) {
+      return "এই মোবাইল নম্বরটি আগে থেকেই একটি অ্যাকাউন্টে ব্যবহৃত হয়েছে। নম্বরটি পরীক্ষা করুন অথবা নিজের অন্য নম্বর ব্যবহার করুন।";
     }
     if (/invalid email|email address.*invalid/.test(raw)) {
       return "আপনার ইমেইল ঠিকানাটি সঠিক নয়। আবার লিখুন।";
@@ -112,6 +112,11 @@
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
+    const normalizedEmail = email.value.trim();
+    if (!normalizedEmail) return setMessage("আপনার ইমেইল ঠিকানা লিখুন।", "error");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) return setMessage("সঠিক ইমেইল ঠিকানা লিখুন। উদাহরণ: name@example.com", "error");
+    if (!password.value) return setMessage("আপনার পাসওয়ার্ড লিখুন।", "error");
+
     if (mode === "signup") {
       if (password.value.length < 8) return setMessage("পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে।", "error");
       if (password.value !== confirmPassword.value) return setMessage("পাসওয়ার্ড এবং কনফার্ম পাসওয়ার্ড মিলছে না।", "error");
