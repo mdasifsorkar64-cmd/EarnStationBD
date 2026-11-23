@@ -39,8 +39,9 @@
     $("owner-share-total").textContent=ownerMoney(s.owner_share_total_bdt);
     $("owner-awaiting").textContent=ownerMoney(s.awaiting_partner_payment_bdt);
     $("owner-received").textContent=ownerMoney(s.partner_payment_received_bdt);
+    $("owner-reversed").textContent=ownerMoney(s.reversed_owner_share_bdt);
+    $("owner-withdrawn").textContent=ownerMoney(s.owner_withdrawn_bdt);
     $("owner-available").textContent=ownerMoney(s.owner_available_bdt);
-    $("owner-available").title="উত্তোলিত: "+ownerMoney(s.owner_withdrawn_bdt)+" · Reversed: "+ownerMoney(s.reversed_owner_share_bdt);
     const root=$("owner-allocations");root.replaceChildren();
     if(!allocations.data?.length){root.textContent="এখনো কোনো অনুমোদিত কমিশন Allocation নেই।";}else allocations.data.forEach(item=>{
       const row=el("div","admin-row"),info=el("div","admin-row-main");
