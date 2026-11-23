@@ -84,7 +84,12 @@
         window.location.href = new URL("dashboard.html", window.location.href).href;
       }
     } catch (error) {
-      message.textContent = error.message || "কাজটি সম্পন্ন হয়নি। আবার চেষ্টা করুন।";
+      const errorText = String(error.message || "");
+      if (mode === "signup" && /Database error saving new user/i.test(errorText)) {
+        message.textContent = "এই মোবাইল নম্বরটি আগে থেকেই একটি অ্যাকাউন্টে যুক্ত আছে। নতুন অ্যাকাউন্ট না খুলে লগইন ট্যাবে গিয়ে আপনার বিদ্যমান অ্যাকাউন্টে প্রবেশ করুন। আপনার অ্যাডমিন অ্যাকাউন্ট নিরাপদ আছে—এটি মুছবেন না।";
+      } else {
+        message.textContent = error.message || "কাজটি সম্পন্ন হয়নি। আবার চেষ্টা করুন।";
+      }
       message.classList.add("error");
     } finally {
       submit.disabled = false;
