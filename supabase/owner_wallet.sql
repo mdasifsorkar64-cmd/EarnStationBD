@@ -100,7 +100,7 @@ declare
   v_withdrawn numeric(14,2);
 begin
   if not public.is_admin() then raise exception 'Admin access required'; end if;
-  if p_conversion_id is null or p_status not in ('awaiting_partner_payment','received','reversed') then
+  if p_conversion_id is null or p_status is null or p_status not in ('awaiting_partner_payment','received','reversed') then
     raise exception 'Invalid partner payment status';
   end if;
 
@@ -142,7 +142,7 @@ declare
   v_id uuid;
 begin
   if not public.is_admin() then raise exception 'Admin access required'; end if;
-  if p_amount is null or p_amount <= 0 then raise exception 'Withdrawal amount must be positive'; end if;
+  if p_amount is null or round(p_amount,2) <= 0 then raise exception 'Withdrawal amount must be positive'; end if;
   if p_method not in ('bkash','nagad','bank','cash','other') then raise exception 'Unsupported payout method'; end if;
   if p_transaction_id is null or length(btrim(p_transaction_id)) not between 4 and 100 then
     raise exception 'A valid transaction/reference ID is required';
