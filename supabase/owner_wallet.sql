@@ -14,6 +14,8 @@ create table if not exists public.owner_wallet_withdrawals (
 
 create unique index if not exists owner_wallet_withdrawals_txid_uidx
   on public.owner_wallet_withdrawals (lower(btrim(payment_transaction_id)));
+create index if not exists owner_wallet_withdrawals_created_by_idx
+  on public.owner_wallet_withdrawals (created_by);
 
 alter table public.owner_wallet_withdrawals enable row level security;
 drop policy if exists owner_wallet_withdrawals_admin_read on public.owner_wallet_withdrawals;
