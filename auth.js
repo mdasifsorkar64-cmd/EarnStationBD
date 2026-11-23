@@ -23,6 +23,56 @@
     message.textContent = text;
     message.className = "auth-message" + (type ? " " + type : "");
   }
+
+  // Convert Supabase Auth / Postgres errors into clear Bengali messages.
+  function friendlyAuthError(error) {
+    const raw = String(error?.message || "").toLowerCase();
+    const code = String(error?.code || error?.status || "");
+
+    if (/invalid login credentials|invalid email or password/.test(raw)) {
+      return "আপনার ইমেইল অথবা পাসওয়ার্ড সঠিক নয়। আবার পরীক্ষা করুন।";
+    }
+    if (/email not confirmed/.test(raw)) {
+      return "আপনার ইমেইল এখনো যাচাই করা হয়নি। ইমেইলের যাচাইকরণ লিংকে চাপ দিন।";
+    }
+    if (/user already registered|already been registered|already registered/.test(raw)) {
+      return "এই ইমেইল দিয়ে আগে থেকেই একটি অ্যাকাউন্ট রয়েছে। লগইন করুন অথবা পাসওয়ার্ড রিসেট করুন।";
+    }
+    if (/phone number.*(already|registered)|user with this phone.*exists/.test(raw)) {
+      return "এই মোবাইল নম্বরটি আগে থেকেই ব্যবহৃত হয়েছে। অন্য নম্বর ব্যবহার করুন।";
+    }
+    if (/invalid email|email address.*invalid/.test(raw)) {
+      return "আপনার ইমেইল ঠিকানাটি সঠিক নয়। আবার লিখুন।";
+    }
+    if (/password.*(at least|too short|characters)|weak password/.test(raw)) {
+      return "পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের এবং নিরাপদ হতে হবে।";
+    }
+    if (/same password|password.*match/.test(raw)) {
+      return "দুটি পাসওয়ার্ড মিলছে না। একই পাসওয়ার্ড লিখুন।";
+    }
+    if (/rate limit|too many requests/.test(raw) || code === "429") {
+      return "অনেকবার চেষ্টা করা হয়েছে। কিছুক্ষণ অপেক্ষা করে আবার চেষ্টা করুন।";
+    }
+    if (/network|failed to fetch|fetch error/.test(raw)) {
+      return "ইন্টারনেট সংযোগে সমস্যা হয়েছে। সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।";
+    }
+    if (/23505/.test(raw) || code === "23505") {
+      return "এই তথ্যটি আগে থেকেই ব্যবহৃত হয়েছে। মোবাইল নম্বর ও ইমেইল পরীক্ষা করুন।";
+    }
+    if (/23503|foreign key/.test(raw)) {
+      return "অ্যাকাউন্টের তথ্য সংরক্ষণে সম্পর্কিত ডেটার সমস্যা হয়েছে। সহায়তার জন্য অ্যাডমিনকে জানান।";
+    }
+    if (/23502|not-null/.test(raw)) {
+      return "কিছু প্রয়োজনীয় তথ্য পাওয়া যায়নি। ফর্মের সব আবশ্যিক ঘর পূরণ করুন।";
+    }
+    if (/42501|permission denied|row-level security/.test(raw)) {
+      return "এই কাজের অনুমতি পাওয়া যায়নি। অ্যাডমিনকে সমস্যাটি জানান।";
+    }
+    if (/database error saving new user|error saving new user|database error/.test(raw)) {
+      return "আপনার অ্যাকাউন্টের তথ্য ডেটাবেজে সংরক্ষণ করা যায়নি। আপনার ইমেইল ও মোবাইল নম্বর আগে ব্যবহৃত হয়েছে কি না পরীক্ষা করুন। সমস্যা থাকলে অ্যাডমিনকে জানান।";
+    }
+    return "দুঃখিত, কাজটি সম্পন্ন হয়নি। আপনার তথ্য পরীক্ষা করে আবার চেষ্টা করুন। সমস্যা চলতে থাকলে অ্যাডমিনকে জানান।";
+  }
   function setMode(next) {
     mode = next;
     const signup = mode === "signup";
@@ -97,7 +147,7 @@
         window.location.href = "dashboard.html";
       }
     } catch (error) {
-      setMessage(error.message || "কাজটি সম্পন্ন হয়নি। আবার চেষ্টা করুন।", "error");
+      setMessage(friendlyAuthError(error), "error");
     } finally {
       submit.disabled = false;
     }
