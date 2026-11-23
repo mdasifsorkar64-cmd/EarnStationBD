@@ -24,6 +24,64 @@
     "withdrawals-stat-card":()=>{navigateView("withdrawals");loadWithdrawals().catch(e=>message(e.message||"উত্তোলন তালিকা লোড হয়নি।",true));}
   };
   Object.entries(statCardActions).forEach(([id,action])=>{const card=$(id);card.addEventListener("click",action);card.addEventListener("keydown",event=>{if(event.key==="Enter"||event.key===" "){event.preventDefault();action();}});});
+  const ownerMoney=v=>"৳ "+Number(v||0).toFixed(2);
+  const ownerStatus=v=>({awaiting_partner_payment:"পার্টনারের কাছে পাওনা",received:"পার্টনারের টাকা পাওয়া গেছে",reversed:"বাতিল / Reversed"}[v]||v);
+  async function loadOwnerWallet(){
+    $("owner-allocations").textContent="লোড হচ্ছে...";
+    const [summary,allocations,history]=await Promise.all([
+      client.rpc("admin_get_owner_wallet_summary"),
+      client.rpc("admin_list_owner_allocations"),
+      client.from("owner_wallet_withdrawals").select("id,amount,payout_method,payment_transaction_id,note,created_at").order("created_at",{ascending:false}).limit(100)
+    ]);
+    if(summary.error)throw summary.error;if(allocations.error)throw allocations.error;if(history.error)throw history.error;
+    const s=Array.isArray(summary.data)?summary.data[0]:summary.data;
+    if(!s)throw new Error("মালিকের Wallet হিসাব পাওয়া যায়নি।");
+    $("owner-share-total").textContent=ownerMoney(s.owner_share_total_bdt);
+    $("owner-awaiting").textContent=ownerMoney(s.awaiting_partner_payment_bdt);
+    $("owner-received").textContent=ownerMoney(s.partner_payment_received_bdt);
+    $("owner-available").textContent=ownerMoney(s.owner_available_bdt);
+    $("owner-available").title="উত্তোলিত: "+ownerMoney(s.owner_withdrawn_bdt)+" · Reversed: "+ownerMoney(s.reversed_owner_share_bdt);
+    const root=$("owner-allocations");root.replaceChildren();
+    if(!allocations.data?.length){root.textContent="এখনো কোনো অনুমোদিত কমিশন Allocation নেই।";}else allocations.data.forEach(item=>{
+      const row=el("div","admin-row"),info=el("div","admin-row-main");
+      info.append(el("b","",item.partner_name+" · মালিকের অংশ "+ownerMoney(item.owner_share_bdt)),
+        el("small","","রেফারেন্স: "+item.external_conversion_id+" · মোট কমিশন "+ownerMoney(item.partner_gross_bdt)),
+        el("small","","অবস্থা: "+ownerStatus(item.partner_payment_status)+" · "+fmt(item.received_at)));
+      row.append(info);const actions=el("div","admin-row-actions");
+      if(item.partner_payment_status!=="received")actions.append(button("টাকা পেয়েছি",async()=>{
+        if(!confirm(item.partner_name+" থেকে "+ownerMoney(item.owner_share_bdt)+" কমিশনের পেমেন্ট বাস্তবে পেয়েছেন?"))return;
+        const {error}=await client.rpc("admin_set_partner_payment_status",{p_conversion_id:item.conversion_id,p_status:"received"});if(error)throw error;await loadOwnerWallet();
+      },"active"));
+      if(item.partner_payment_status!=="reversed")actions.append(button("Reversed",async()=>{
+        if(!confirm("এই কমিশনটি পার্টনার বাতিল/ফেরত নিয়েছে—নিশ্চিত? ইতিমধ্যে উত্তোলিত অর্থ থাকলে সিস্টেম পরিবর্তন আটকাবে।"))return;
+        const {error}=await client.rpc("admin_set_partner_payment_status",{p_conversion_id:item.conversion_id,p_status:"reversed"});if(error)throw error;await loadOwnerWallet();
+      },"rejected"));
+      if(item.partner_payment_status!=="awaiting_partner_payment")actions.append(button("অপেক্ষমাণ করুন",async()=>{
+        if(!confirm("এই পার্টনার পেমেন্টকে আবার অপেক্ষমাণ করবেন?"))return;
+        const {error}=await client.rpc("admin_set_partner_payment_status",{p_conversion_id:item.conversion_id,p_status:"awaiting_partner_payment"});if(error)throw error;await loadOwnerWallet();
+      }));
+      row.append(actions);root.append(row);
+    });
+    const hist=$("owner-withdrawal-history");hist.replaceChildren();
+    if(!history.data?.length){hist.textContent="এখনো কোনো মালিকের উত্তোলন রেকর্ড নেই.";}else history.data.forEach(w=>{
+      const row=el("div","admin-row"),info=el("div","admin-row-main");
+      const method=({bkash:"বিকাশ",nagad:"নগদ",bank:"ব্যাংক",cash:"নগদ হাতে",other:"অন্যান্য"}[w.payout_method]||w.payout_method);
+      info.append(el("b","",ownerMoney(w.amount)+" · "+method),el("small","","Transaction ID: "+w.payment_transaction_id+" · "+fmt(w.created_at)));
+      if(w.note)info.append(el("small","", "নোট: "+w.note));row.append(info);hist.append(row);
+    });
+  }
+  $("owner-withdrawal-form").addEventListener("submit",async event=>{
+    event.preventDefault();
+    const amount=Number($("owner-withdrawal-amount").value),method=$("owner-withdrawal-method").value,txid=$("owner-withdrawal-txid").value.trim(),note=$("owner-withdrawal-note").value.trim();
+    if(!Number.isFinite(amount)||amount<=0||txid.length<4||txid.length>100){message("সঠিক পরিমাণ ও Transaction ID দিন।",true);return;}
+    if(!confirm(ownerMoney(amount)+" মালিকের Wallet থেকে উত্তোলন হিসেবে রেকর্ড করবেন? টাকা বাস্তবে পেয়েছেন/উত্তোলন করেছেন নিশ্চিত করুন।"))return;
+    $("owner-withdrawal-submit").disabled=true;
+    try{const {error}=await client.rpc("admin_record_owner_withdrawal",{p_amount:amount,p_method:method,p_transaction_id:txid,p_note:note});if(error)throw error;
+      $("owner-withdrawal-form").reset();message("মালিকের উত্তোলন রেকর্ড হয়েছে।");await loadOwnerWallet();
+    }catch(e){message(e.message||"উত্তোলন রেকর্ড করা যায়নি।",true);}finally{$("owner-withdrawal-submit").disabled=false;}
+  });
+  $("refresh-owner-wallet").addEventListener("click",()=>loadOwnerWallet().catch(e=>message(e.message,true)));
+
   async function loadSettings(){
     $("settings-status").textContent="সেটিংস লোড হচ্ছে...";
     const {data,error}=await client.rpc("admin_get_platform_settings");
@@ -196,7 +254,7 @@ async function loadOffers(){
   }catch(e){$("site-status").textContent=e.message||"সংরক্ষণ করা যায়নি।";message(e.message||"সংরক্ষণ করা যায়নি।",true);}finally{$("save-site").disabled=false;}});
   $("refresh-site").addEventListener("click",()=>loadSiteSettings().catch(e=>message(e.message,true)));
 
-  async function refreshAll(){try{await Promise.all([loadMembers(),loadOffers(),loadConversions(),loadWithdrawals(),loadSettings(),loadSiteSettings(),loadReferralSettings()]);message("সব তথ্য আপডেট হয়েছে।");}catch(e){message(e.message||"তথ্য লোড করা যায়নি।",true);}}
+  async function refreshAll(){try{await Promise.all([loadMembers(),loadOffers(),loadConversions(),loadWithdrawals(),loadOwnerWallet(),loadSettings(),loadSiteSettings(),loadReferralSettings()]);message("সব তথ্য আপডেট হয়েছে।");}catch(e){message(e.message||"তথ্য লোড করা যায়নি।",true);}}
   $("refresh-all").addEventListener("click",refreshAll);
   (async()=>{try{const {data,error}=await client.auth.getSession();if(error)throw error;if(!data.session){location.replace("auth.html");return;}const {data:profile,error:pe}=await client.from("profiles").select("role").eq("id",data.session.user.id).single();if(pe)throw pe;if(profile?.role!=="admin"){location.replace("dashboard.html");return;}
     $("admin-top").hidden=false;$("admin-content").hidden=false;$("admin-footer").hidden=false;message("অ্যাডমিন যাচাই সফল।");await refreshAll();
