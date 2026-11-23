@@ -1,8 +1,46 @@
 <!doctype html>
-<html lang="bn"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>সদস্য অ্যাকাউন্ট · Earn Station BD</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="dashboard.css"><link rel="stylesheet" href="auth.css"></head>
-<body><header><a class="brand" href="index.html">Earn Station <b>BD</b></a><a href="index.html">হোম</a></header>
-<main class="auth-wrap"><section class="auth-card"><p class="tag">MEMBER ACCOUNT</p><h1>সদস্য অ্যাকাউন্ট</h1><p>ইমেইল দিয়ে নতুন অ্যাকাউন্ট খুলুন অথবা লগইন করুন।</p>
-<div class="auth-tabs"><button type="button" id="show-login" class="active">লগইন</button><button type="button" id="show-signup">নতুন অ্যাকাউন্ট</button></div>
-<form id="auth-form"><label for="email">ইমেইল ঠিকানা</label><input id="email" type="email" autocomplete="email" required placeholder="আপনার ইমেইল"><label for="password">পাসওয়ার্ড</label><input id="password" type="password" autocomplete="current-password" minlength="8" required placeholder="কমপক্ষে ৮ অক্ষর"><button class="button auth-submit" id="submit-button" type="submit">লগইন করুন</button></form>
-<p id="auth-message" class="auth-message" role="status" aria-live="polite"></p><p class="auth-note">নিবন্ধনের পর ইমেইলে যাচাইকরণ লিংক পাঠানো হবে। যাচাই সম্পন্ন না হলে লগইন করা যাবে না।</p>
-</section></main><footer>Earn Station BD</footer><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-config.js"></script><script src="auth.js"></script></body></html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>সদস্য অ্যাকাউন্ট · Earn Station BD</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="dashboard.css">
+<link rel="stylesheet" href="auth.css">
+</head>
+<body>
+<header><a class="brand" href="index.html">Earn Station <b>BD</b></a><a href="index.html">হোম</a></header>
+<main class="auth-wrap">
+<section class="auth-card">
+<p class="tag">MEMBER ACCOUNT</p>
+<h1>সদস্য অ্যাকাউন্ট</h1>
+<p>ইমেইল দিয়ে নতুন অ্যাকাউন্ট খুলুন অথবা লগইন করুন।</p>
+<div class="auth-tabs">
+<button type="button" id="show-login" class="active">লগইন</button>
+<button type="button" id="show-signup">নতুন অ্যাকাউন্ট</button>
+</div>
+<form id="auth-form">
+<div id="signup-fields" hidden>
+<label for="full-name">পূর্ণ নাম</label>
+<input id="full-name" type="text" autocomplete="name" maxlength="100" placeholder="আপনার পুরো নাম" disabled>
+<label for="phone">মোবাইল নম্বর</label>
+<input id="phone" type="tel" inputmode="numeric" autocomplete="tel" maxlength="11" pattern="01[3-9][0-9]{8}" placeholder="01XXXXXXXXX" disabled>
+<label for="referral-code">রেফারেল কোড (ঐচ্ছিক)</label>
+<input id="referral-code" type="text" autocomplete="off" maxlength="32" placeholder="থাকলে লিখুন" disabled>
+</div>
+<label for="email">ইমেইল ঠিকানা</label>
+<input id="email" type="email" autocomplete="email" required placeholder="আপনার ইমেইল">
+<label for="password">পাসওয়ার্ড</label>
+<input id="password" type="password" autocomplete="current-password" minlength="8" required placeholder="কমপক্ষে ৮ অক্ষর">
+<button class="button auth-submit" id="submit-button" type="submit">লগইন করুন</button>
+</form>
+<p id="auth-message" class="auth-message" role="status" aria-live="polite"></p>
+<p class="auth-note">নিবন্ধনের পর ইমেইলে যাচাইকরণ লিংক পাঠানো হবে। যাচাই সম্পন্ন না হলে লগইন করা যাবে না।</p>
+</section>
+</main>
+<footer>Earn Station BD</footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="auth.js"></script>
+</body>
+</html>
