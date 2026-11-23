@@ -43,7 +43,7 @@ begin
   return query
   with allocation_totals as (
     select
-      coalesce(sum(a.owner_share_bdt) filter (where a.partner_payment_status <> 'reversed'),0)::numeric(14,2) as total_share,
+      coalesce(sum(a.owner_share_bdt),0)::numeric(14,2) as total_share,
       coalesce(sum(a.owner_share_bdt) filter (where a.partner_payment_status = 'awaiting_partner_payment'),0)::numeric(14,2) as awaiting,
       coalesce(sum(a.owner_share_bdt) filter (where a.partner_payment_status = 'received'),0)::numeric(14,2) as received,
       coalesce(sum(a.owner_share_bdt) filter (where a.partner_payment_status = 'reversed'),0)::numeric(14,2) as reversed
@@ -114,6 +114,11 @@ begin
      set partner_payment_status=p_status, updated_at=now()
    where conversion_id=p_conversion_id;
 
+  insert into public.admin_audit_log(admin_id,action,details)
+  values(auth.uid(),'owner_wallet_partner_payment_status',
+    jsonb_build_object('conversion_id',p_conversion_id,'old_status',v_status,
+                       'new_status',p_status));
+
   select coalesce(sum(a.owner_share_bdt),0) into v_received
     from public.partner_commission_allocations a
    where a.partner_payment_status='received';
@@ -139,10 +144,13 @@ as $$
 declare
   v_received numeric(14,2);
   v_withdrawn numeric(14,2);
+  v_amount numeric(12,2);
   v_id uuid;
 begin
   if not public.is_admin() then raise exception 'Admin access required'; end if;
-  if p_amount is null or round(p_amount,2) <= 0 then raise exception 'Withdrawal amount must be positive'; end if;
+  if p_amount is null then raise exception 'Withdrawal amount must be positive'; end if;
+  v_amount := round(p_amount,2);
+  if v_amount <= 0 then raise exception 'Withdrawal amount must be positive'; end if;
   if p_method not in ('bkash','nagad','bank','cash','other') then raise exception 'Unsupported payout method'; end if;
   if p_transaction_id is null or length(btrim(p_transaction_id)) not between 4 and 100 then
     raise exception 'A valid transaction/reference ID is required';
@@ -155,15 +163,22 @@ begin
   select coalesce(sum(w.amount),0) into v_withdrawn
     from public.owner_wallet_withdrawals w;
 
-  if p_amount > v_received-v_withdrawn then
+  if v_amount > v_received-v_withdrawn then
     raise exception 'Insufficient owner wallet balance';
   end if;
 
   insert into public.owner_wallet_withdrawals
     (amount,payout_method,payment_transaction_id,note,created_by)
   values
-    (round(p_amount,2),p_method,btrim(p_transaction_id),left(coalesce(p_note,''),1000),auth.uid())
+    (v_amount,p_method,btrim(p_transaction_id),left(coalesce(p_note,''),1000),auth.uid())
   returning id into v_id;
+
+  insert into public.admin_audit_log(admin_id,action,details)
+  values(auth.uid(),'owner_wallet_withdrawal_recorded',
+    jsonb_build_object('withdrawal_id',v_id,'amount_bdt',v_amount,
+                       'method',p_method,'transaction_id',btrim(p_transaction_id),
+                       'note',left(coalesce(p_note,''),1000)));
+
   return v_id;
 end;
 $$;
