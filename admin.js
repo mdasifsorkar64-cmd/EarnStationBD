@@ -186,8 +186,10 @@ async function loadOffers(){
     data.forEach(w=>{
       const row=el("div","admin-row"),info=el("div","admin-row-main");
       const member=w.member||{};
+      const gross=Number(w.amount||0), fee=Number(w.payout_fee_bdt||0), net=Number(w.payout_net_bdt??gross);
       info.append(
-        el("b","", (w.is_test?"[TEST] পরীক্ষামূলক · ":"")+money(w.amount)+" · "+(w.payout_method==="bkash"?"বিকাশ":"নগদ")+" · "+statusBn(w.status)),
+        el("b","", (w.is_test?"[TEST] পরীক্ষামূলক · ":"")+"উত্তোলন "+money(gross)+" · "+(w.payout_method==="bkash"?"বিকাশ":"নগদ")+" · "+statusBn(w.status)),
+        el("small","","পেমেন্ট হিসাব: মোট "+money(gross)+" · চার্জ "+money(fee)+" · সদস্যকে পাঠাতে হবে "+money(net)),
         el("small","","সদস্য: "+(member.full_name||"নাম নেই")+" · "+(member.phone||"ফোন নেই")),
         el("small","","পেমেন্ট নম্বর: "+w.payout_account),
         el("small","","User ID: "+w.user_id),
@@ -201,11 +203,11 @@ async function loadOffers(){
       row.append(info);
       if(!w.is_test && ["pending","approved"].includes(w.status)){
         row.append(button("টাকা পাঠিয়েছি · SUCCESS করুন",async()=>{
-          const transactionId=prompt("বিকাশ/নগদে "+money(w.amount)+" পাঠানোর পর প্রাপ্ত Transaction ID লিখুন:");
+          const net=Number(w.payout_net_bdt??w.amount);\n          const transactionId=prompt("সদস্যকে "+money(net)+" পাঠানোর পর প্রাপ্ত Transaction ID লিখুন:");
           if(transactionId===null)return;
           const cleanTransactionId=transactionId.trim();
           if(cleanTransactionId.length<4||cleanTransactionId.length>100){throw new Error("সঠিক Transaction ID লিখুন (৪–১০০ অক্ষর)।");}
-          if(!confirm("সদস্যকে "+money(w.amount)+" সত্যিই পাঠানো হয়েছে এবং Transaction ID "+cleanTransactionId+" সঠিক? শুধু টাকা পাঠানোর পর SUCCESS করুন।"))return;
+          if(!confirm("সদস্যকে নেট "+money(net)+" সত্যিই পাঠানো হয়েছে এবং Transaction ID "+cleanTransactionId+" সঠিক? শুধু টাকা পাঠানোর পর SUCCESS করুন।"))return;
           const {data:{session:active}}=await client.auth.getSession();
           const res=await fetch("/api/admin/withdrawals/complete",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+active.access_token},body:JSON.stringify({withdrawal_id:w.id,transaction_id:cleanTransactionId})});
           const out=await res.json();if(!res.ok)throw new Error(out.error||"স্ট্যাটাস আপডেট হয়নি।");
