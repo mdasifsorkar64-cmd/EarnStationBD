@@ -80,6 +80,24 @@
       $("owner-withdrawal-form").reset();message("মালিকের উত্তোলন রেকর্ড হয়েছে।");await loadOwnerWallet();
     }catch(e){message(e.message||"উত্তোলন রেকর্ড করা যায়নি।",true);}finally{$("owner-withdrawal-submit").disabled=false;}
   });
+  $("owner-receiving-form").addEventListener("submit",async event=>{
+    event.preventDefault();
+    const bkash=$("owner-bkash-number").value.trim().replaceAll(" ","").replaceAll("-","");
+    const bkashName=$("owner-bkash-name").value.trim();
+    const nagad=$("owner-nagad-number").value.trim().replaceAll(" ","").replaceAll("-","");
+    const nagadName=$("owner-nagad-name").value.trim();
+    const validNumber=value=>!value||(value.length===11&&value.startsWith("01")&&"3456789".includes(value[2])&&Number.isInteger(Number(value)));
+    if(!bkash&&!nagad){$("owner-receiving-status").textContent="বিকাশ অথবা নগদের অন্তত একটি নম্বর দিন।";return;}
+    if(!validNumber(bkash)||!validNumber(nagad)){$("owner-receiving-status").textContent="সঠিক ১১ সংখ্যার বাংলাদেশি মোবাইল নম্বর লিখুন।";return;}
+    if((bkash&&bkashName.length<2)||(nagad&&nagadName.length<2)){$("owner-receiving-status").textContent="যে নম্বরটি ব্যবহার করবেন, তার অ্যাকাউন্টের নামও দিন।";return;}
+    const save=$("owner-receiving-save");save.disabled=true;$("owner-receiving-status").textContent="সংরক্ষণ হচ্ছে...";
+    try{
+      const {error}=await client.rpc("admin_save_owner_partner_payment_destinations",{p_bkash_number:bkash||null,p_bkash_account_name:bkashName||null,p_nagad_number:nagad||null,p_nagad_account_name:nagadName||null});
+      if(error)throw error;
+      $("owner-receiving-status").textContent="বিকাশ/নগদ গ্রহণের তথ্য সংরক্ষিত হয়েছে।";message("পার্টনারের কমিশন গ্রহণের নম্বর সংরক্ষিত হয়েছে।");
+    }catch(e){$("owner-receiving-status").textContent=e.message||"নম্বর সংরক্ষণ করা যায়নি।";message(e.message||"নম্বর সংরক্ষণ করা যায়নি।",true);}
+    finally{save.disabled=false;}
+  });
   $("refresh-owner-wallet").addEventListener("click",()=>loadOwnerWallet().catch(e=>message(e.message,true)));
 
   async function loadSettings(){
