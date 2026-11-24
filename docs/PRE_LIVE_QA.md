@@ -8,7 +8,7 @@ This checklist is for the owner and release reviewer before changes are merged i
 - [ ] Review and approve PR #3 (Cloudflare Pages withdrawal API).
 - [ ] PR #6 is stacked on PR #3; merge/test PR #3 first, then PR #6.
 - [ ] Review PR #4 and PR #5 (Supabase EXECUTE privilege hardening). Their migrations were applied and verified separately; confirm migration history before release.
-- [ ] Review PR #7 (owner bKash/Nagad destination settings). Its migration is pending; apply only during the approved release and verify it succeeds.
+- [ ] Review PR #7 (owner bKash/Nagad destination settings). Its migration `owner_partner_payment_destinations` has already been applied to live Supabase and verified: the table and both admin RPCs exist, RLS is enabled, and direct table grants to `anon`, `authenticated`, and `public` are absent. No receiving numbers have been entered. Confirm migration history before release.
 - [ ] Keep all PRs Draft until owner explicitly approves the release.
 
 ## Cloudflare Production bindings
@@ -57,6 +57,7 @@ Do not rotate the encryption key during this release. Never paste it into GitHub
 - [ ] Check latest Cloudflare Preview deployment corresponds to the reviewed PR head.
 - [ ] Confirm no secrets or personal payout numbers appear in diffs, logs, or PR comments.
 - [ ] No real payment, balance adjustment, or test ledger cleanup is performed as part of QA.
+- [x] PR #7 receiving-destinations migration applied and verified on live Supabase before release; no payout destinations or money movements were added.
 - [ ] Verify live Supabase migration history and privileges after release.
 - [ ] Confirm production branch deployment and perform smoke tests.
 - [ ] Keep `main` untouched unless separately authorized.
