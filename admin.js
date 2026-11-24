@@ -176,7 +176,7 @@ async function loadOffers(){
     $("withdrawals-list").textContent="লোড হচ্ছে...";
     const {data:{session}}=await client.auth.getSession();
     if(!session) throw new Error("আবার লগইন করুন।");
-    const response=await fetch("http://127.0.0.1:3001/api/admin/withdrawals",{headers:{Authorization:"Bearer "+session.access_token}});
+    const response=await fetch("/api/admin/withdrawals",{headers:{Authorization:"Bearer "+session.access_token}});
     const result=await response.json();
     if(!response.ok) throw new Error(result.error||"উইথড্র তালিকা লোড করা যায়নি।");
     const data=result.withdrawals||[];
@@ -207,7 +207,7 @@ async function loadOffers(){
           if(cleanTransactionId.length<4||cleanTransactionId.length>100){throw new Error("সঠিক Transaction ID লিখুন (৪–১০০ অক্ষর)।");}
           if(!confirm("সদস্যকে "+money(w.amount)+" সত্যিই পাঠানো হয়েছে এবং Transaction ID "+cleanTransactionId+" সঠিক? শুধু টাকা পাঠানোর পর SUCCESS করুন।"))return;
           const {data:{session:active}}=await client.auth.getSession();
-          const res=await fetch("http://127.0.0.1:3001/api/admin/withdrawals/complete",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+active.access_token},body:JSON.stringify({withdrawal_id:w.id,transaction_id:cleanTransactionId})});
+          const res=await fetch("/api/admin/withdrawals/complete",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+active.access_token},body:JSON.stringify({withdrawal_id:w.id,transaction_id:cleanTransactionId})});
           const out=await res.json();if(!res.ok)throw new Error(out.error||"স্ট্যাটাস আপডেট হয়নি।");
           message(out.status==="refunded"?"৫ ঘণ্টা পার হয়েছে—টাকা সদস্যকে ফেরত দেওয়া হয়েছে।":"পেমেন্ট SUCCESS হিসেবে সংরক্ষিত হয়েছে।");
           await loadWithdrawals();
@@ -255,7 +255,7 @@ async function loadOffers(){
   }catch(e){$("site-status").textContent=e.message||"সংরক্ষণ করা যায়নি।";message(e.message||"সংরক্ষণ করা যায়নি।",true);}finally{$("save-site").disabled=false;}});
   $("refresh-site").addEventListener("click",()=>loadSiteSettings().catch(e=>message(e.message,true)));
 
-  async function refreshAll(){try{await Promise.all([loadMembers(),loadOffers(),loadConversions(),loadWithdrawals(),loadOwnerWallet(),loadSettings(),loadSiteSettings(),loadReferralSettings()]);message("সব তথ্য আপডেট হয়েছে।");}catch(e){message(e.message||"তথ্য লোড করা যায়নি।",true);}}
+  async function refreshAll(){const tasks=[ ["সদস্য",loadMembers], ["অফার",loadOffers], ["কমিশন",loadConversions], ["উত্তোলন",loadWithdrawals], ["মালিকের Wallet",loadOwnerWallet], ["আয় ও সীমা",loadSettings], ["ওয়েবসাইট",loadSiteSettings], ["রেফারেল",loadReferralSettings] ];const results=await Promise.allSettled(tasks.map(([,fn])=>fn()));const failed=results.map((r,i)=>r.status==="rejected"?tasks[i][0]+": "+(r.reason?.message||"লোড হয়নি"):null).filter(Boolean);if(failed.length)message("কিছু তথ্য লোড হয়নি। অন্য অংশগুলো আপডেট হয়েছে। "+failed.join(" | "),true);else message("সব তথ্য আপডেট হয়েছে।");}
   $("refresh-all").addEventListener("click",refreshAll);
   (async()=>{try{const {data,error}=await client.auth.getSession();if(error)throw error;if(!data.session){location.replace("auth.html");return;}const {data:profile,error:pe}=await client.from("profiles").select("role").eq("id",data.session.user.id).single();if(pe)throw pe;if(profile?.role!=="admin"){location.replace("dashboard.html");return;}
     $("admin-top").hidden=false;$("admin-content").hidden=false;$("admin-footer").hidden=false;message("অ্যাডমিন যাচাই সফল।");await refreshAll();
