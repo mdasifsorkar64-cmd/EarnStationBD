@@ -203,7 +203,8 @@ async function loadOffers(){
       row.append(info);
       if(!w.is_test && ["pending","approved"].includes(w.status)){
         row.append(button("টাকা পাঠিয়েছি · SUCCESS করুন",async()=>{
-          const net=Number(w.payout_net_bdt??w.amount);\n          const transactionId=prompt("সদস্যকে "+money(net)+" পাঠানোর পর প্রাপ্ত Transaction ID লিখুন:");
+          const net=Number(w.payout_net_bdt??w.amount);
+          const transactionId=prompt("সদস্যকে "+money(net)+" পাঠানোর পর প্রাপ্ত Transaction ID লিখুন:");
           if(transactionId===null)return;
           const cleanTransactionId=transactionId.trim();
           if(cleanTransactionId.length<4||cleanTransactionId.length>100){throw new Error("সঠিক Transaction ID লিখুন (৪–১০০ অক্ষর)।");}
