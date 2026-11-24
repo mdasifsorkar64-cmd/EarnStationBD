@@ -28,12 +28,11 @@
   const ownerStatus=v=>({awaiting_partner_payment:"পার্টনারের কাছে পাওনা",received:"পার্টনারের টাকা পাওয়া গেছে",reversed:"বাতিল / Reversed"}[v]||v);
   async function loadOwnerWallet(){
     $("owner-allocations").textContent="লোড হচ্ছে...";
-    const [summary,allocations,history]=await Promise.all([
-      client.rpc("admin_get_owner_wallet_summary"),
-      client.rpc("admin_list_owner_allocations"),
-      client.from("owner_wallet_withdrawals").select("id,amount,payout_method,payment_transaction_id,note,created_at").order("created_at",{ascending:false}).limit(100)
-    ]);
-    if(summary.error)throw summary.error;if(allocations.error)throw allocations.error;if(history.error)throw history.error;
+    const [summary,allocations,history,receiving]=await Promise.all([client.rpc("admin_get_owner_wallet_summary"),client.rpc("admin_list_owner_allocations"),client.from("owner_wallet_withdrawals").select("id,amount,payout_method,payment_transaction_id,note,created_at").order("created_at",{ascending:false}).limit(100),client.rpc("admin_get_owner_partner_payment_destinations")]);
+    if(summary.error)throw summary.error;if(allocations.error)throw allocations.error;if(history.error)throw history.error;if(receiving.error)throw receiving.error;
+    const destination=receiving.data?.[0]||{};
+    $("owner-bkash-number").value=destination.bkash_number||"";$("owner-bkash-name").value=destination.bkash_account_name||"";$("owner-nagad-number").value=destination.nagad_number||"";$("owner-nagad-name").value=destination.nagad_account_name||"";
+    $("owner-receiving-status").textContent=destination.updated_at?"সর্বশেষ সংরক্ষণ: "+fmt(destination.updated_at):"এখনো কোনো গ্রহণের নম্বর সংরক্ষণ করা হয়নি।";
     const s=Array.isArray(summary.data)?summary.data[0]:summary.data;
     if(!s)throw new Error("মালিকের Wallet হিসাব পাওয়া যায়নি।");
     $("owner-share-total").textContent=ownerMoney(s.owner_share_total_bdt);
