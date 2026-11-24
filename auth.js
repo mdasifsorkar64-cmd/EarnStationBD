@@ -117,6 +117,7 @@
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) return setMessage("সঠিক ইমেইল ঠিকানা লিখুন। উদাহরণ: name@example.com", "error");
     if (!password.value) return setMessage("আপনার পাসওয়ার্ড লিখুন।", "error");
 
+    const normalizedPhone = phone.value.trim().replace(/[\\s-]/g, "");
     if (mode === "signup") {
       if (password.value.length < 8) return setMessage("পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে।", "error");
       if (password.value !== confirmPassword.value) return setMessage("পাসওয়ার্ড এবং কনফার্ম পাসওয়ার্ড মিলছে না।", "error");
