@@ -135,6 +135,7 @@
     event.preventDefault();
     const fee=Number($("member-payout-fee").value);
     if(!Number.isFinite(fee)||fee<0||fee>100){$("payout-fee-status").textContent="চার্জ ০ থেকে ১০০ টাকার মধ্যে লিখুন।";return;}
+    if(!confirm("সতর্কতা: এই পরিবর্তনটি লাইভ EarnStationBD-র নতুন উত্তোলনের চার্জে সঙ্গে সঙ্গে কার্যকর হবে। পুরোনো উত্তোলন বদলাবে না। আপনি কি ৳ "+fee.toFixed(2)+" চার্জ সংরক্ষণ করতে চান?"))return;
     $("save-payout-fee").disabled=true;
     $("payout-fee-status").textContent="সংরক্ষণ হচ্ছে...";
     try{
