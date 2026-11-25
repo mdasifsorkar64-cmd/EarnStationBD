@@ -7,6 +7,8 @@
   const fullName = document.getElementById("full-name");
   const phone = document.getElementById("phone");
   const referralCode = document.getElementById("referral-code");
+  const termsAccepted = document.getElementById("terms-accepted");
+  const termsGroup = document.getElementById("terms-group");
   const referralGroup = document.getElementById("referral-group");
   const referralFromLink = new URLSearchParams(window.location.search).get("ref") || "";
   const message = document.getElementById("auth-message");
@@ -86,6 +88,8 @@
     if (signup && referralCode && referralFromLink && !referralCode.value) referralCode.value = referralFromLink.toUpperCase().slice(0,10);
     phone.required = signup;
     document.getElementById("confirm-group").hidden = !signup;
+    if (termsGroup) termsGroup.hidden = !signup;
+    if (termsAccepted) termsAccepted.required = signup;
     fullName.required = signup;
     confirmPassword.required = signup;
     loginOptions.hidden = signup;
@@ -122,6 +126,7 @@
       if (password.value.length < 8) return setMessage("পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে।", "error");
       if (password.value !== confirmPassword.value) return setMessage("পাসওয়ার্ড এবং কনফার্ম পাসওয়ার্ড মিলছে না।", "error");
       if (!fullName.value.trim()) return setMessage("আপনার পূর্ণ নাম লিখুন।", "error");
+      if (!termsAccepted?.checked) return setMessage("নিবন্ধনের আগে ব্যবহারের শর্তাবলি ও গোপনীয়তা নীতিতে সম্মতি দিন।", "error");
       if (!/^01[3-9][0-9]{8}$/.test(normalizedPhone)) return setMessage("সঠিক ১১ সংখ্যার বাংলাদেশি মোবাইল নম্বর লিখুন (শুধু সংখ্যা, স্পেস বা হাইফেন)।", "error");
     }
     setMessage("অপেক্ষা করুন...");
