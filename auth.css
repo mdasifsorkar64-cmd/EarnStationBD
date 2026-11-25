@@ -10,3 +10,8 @@
 .auth-page .brand-points .ui-icon{width:16px;height:16px;color:#79e2bd}
 .auth-page .mini-logo{display:grid;place-items:center}
 .auth-page .mini-logo .ui-icon{width:20px;height:20px;stroke-width:2.2}
+
+/* Required signup consent */
+.auth-page .terms-consent{display:flex;align-items:flex-start;gap:10px;color:#53617f;font-size:11px;line-height:1.8;font-weight:600;cursor:pointer}
+.auth-page .terms-consent input{width:17px;height:17px;flex:none;margin:2px 0 0;accent-color:#5268e8}
+.auth-page .terms-consent a{color:#315fe1;font-weight:850;text-decoration:underline;text-underline-offset:2px}
