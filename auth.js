@@ -149,18 +149,27 @@
     recoverySubmit.disabled = true;
     try {
       if (recoveryStage === "request") {
-        const recoveryEmail = document.getElementById("recovery-email").value.trim();
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recoveryEmail)) throw new Error("সঠিক ইমেইল ঠিকানা লিখুন।");
-        const { error } = await client.auth.resetPasswordForEmail(recoveryEmail, {
-          redirectTo: window.location.origin + "/auth.html"
-        });
+        recoveryEmail = document.getElementById("recovery-email").value.trim().toLowerCase();
+        if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(recoveryEmail)) throw new Error("সঠিক ইমেইল ঠিকানা লিখুন।");
+        const { error } = await client.auth.resetPasswordForEmail(recoveryEmail);
         if (error) throw error;
-        setMessage("যদি এই ইমেইলে অ্যাকাউন্ট থাকে, তাহলে পাসওয়ার্ড রিসেটের নির্দেশনা পাঠানো হয়েছে। ইনবক্স ও স্প্যাম ফোল্ডার দেখুন।", "success");
+        showRecovery("otp");
+        setMessage("যদি এই ইমেইলে অ্যাকাউন্ট থাকে, তাহলে ৬ সংখ্যার কোড পাঠানো হয়েছে। ইনবক্স ও স্প্যাম ফোল্ডার দেখুন।", "success");
+      } else if (recoveryStage === "otp") {
+        const token = document.getElementById("recovery-otp").value.trim();
+        if (!/^\\d{6}$/.test(token)) throw new Error("ইমেইলে পাওয়া ৬ সংখ্যার কোডটি লিখুন।");
+        const { data, error } = await client.auth.verifyOtp({ email: recoveryEmail, token, type: "recovery" });
+        if (error) throw error;
+        recoveryUser = data.user || data.session?.user || null;
+        if (!recoveryUser) throw new Error("যাচাইকরণ সেশন পাওয়া যায়নি। আবার কোড নিন।");
+        showRecovery("password");
+        setMessage("ইমেইল যাচাই সফল হয়েছে। এখন নতুন পাসওয়ার্ড দিন।", "success");
       } else {
-        const phoneValue = document.getElementById("recovery-phone").value.trim().replace(/[\s-]/g, "");
+        if (!recoveryUser) throw new Error("যাচাইকরণ সেশন পাওয়া যায়নি। নতুন করে কোড নিন।");
+        const phoneValue = document.getElementById("recovery-phone").value.trim().replace(/[\\s-]/g, "");
         if (!/^01[3-9][0-9]{8}$/.test(phoneValue)) throw new Error("সঠিক ১১ সংখ্যার মোবাইল নম্বর লিখুন।");
         const { data: profile, error: profileError } = await client.from("profiles").select("phone").eq("id", recoveryUser.id).single();
-        if (profileError || !profile || String(profile.phone || "").replace(/[\s-]/g, "") !== phoneValue) throw new Error("ইমেইল ও নিবন্ধিত মোবাইল নম্বরের মিল পাওয়া যায়নি।");
+        if (profileError || !profile || String(profile.phone || "").replace(/[\\s-]/g, "") !== phoneValue) throw new Error("ইমেইল ও নিবন্ধিত মোবাইল নম্বরের মিল পাওয়া যায়নি।");
         const newPassword = document.getElementById("new-password").value;
         const confirmNew = document.getElementById("new-password-confirm").value;
         if (newPassword.length < 8) throw new Error("নতুন পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে।");
