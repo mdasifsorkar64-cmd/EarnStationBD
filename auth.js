@@ -155,12 +155,12 @@
         const { error } = await client.auth.updateUser({ password: newPassword });
         if (error) throw error;
         await client.auth.signOut();
-        setMessage("পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে। এখন নতুন পাসওয়ার্ড দিয়ে লগইন করুন।", "success");
         recoveryPanel.hidden = true;
         form.hidden = false;
         document.querySelector(".auth-tabs").hidden = false;
         recoveryLink.hidden = false;
         setMode("login");
+        setMessage("পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে। এখন নতুন পাসওয়ার্ড দিয়ে লগইন করুন।", "success");
       }
     } catch (error) {
       setMessage(error.message || "অনুরোধটি সম্পন্ন হয়নি। আবার চেষ্টা করুন।", "error");
