@@ -25,6 +25,7 @@
   const recoverySubmit = document.getElementById("recovery-submit");
   let recoveryStage = "request";
   let recoveryUser = null;
+  let recoveryEmail = "";
   // Supabase may return a PKCE callback as ?code=... rather than a #type=recovery hash.
   // Keep the recovery route from being mistaken for an ordinary signed-in visit.
   let recoveryFlowDetected = false;
@@ -122,14 +123,17 @@
     recoveryLink.hidden = true;
     recoveryPanel.hidden = false;
     document.getElementById("recovery-email-group").hidden = stage !== "request";
-    document.getElementById("recovery-phone-group").hidden = stage !== "verify";
-    document.getElementById("new-password-group").hidden = stage !== "verify";
-    document.getElementById("new-password-confirm-group").hidden = stage !== "verify";
-    document.getElementById("recovery-title").textContent = stage === "request" ? "পাসওয়ার্ড পুনরুদ্ধার" : "নতুন পাসওয়ার্ড সেট করুন";
-    document.getElementById("recovery-help").textContent = stage === "request"
-      ? "নিবন্ধিত ইমেইল দিন। ইমেইলে নিরাপদ রিসেট লিংক পাঠানো হবে।"
-      : "ইমেইলের লিংকে প্রবেশের পর আপনার নিবন্ধিত মোবাইল নম্বর মিলিয়ে নতুন পাসওয়ার্ড দিন।";
-    recoverySubmit.textContent = stage === "request" ? "ইমেইলে রিসেট লিংক পাঠান" : "নতুন পাসওয়ার্ড সংরক্ষণ করুন";
+    document.getElementById("recovery-otp-group").hidden = stage !== "otp";
+    document.getElementById("recovery-phone-group").hidden = stage !== "password";
+    document.getElementById("new-password-group").hidden = stage !== "password";
+    document.getElementById("new-password-confirm-group").hidden = stage !== "password";
+    document.getElementById("recovery-title").textContent =
+      stage === "request" ? "পাসওয়ার্ড পুনরুদ্ধার" : stage === "otp" ? "ইমেইল কোড যাচাই" : "নতুন পাসওয়ার্ড সেট করুন";
+    document.getElementById("recovery-help").textContent =
+      stage === "request" ? "নিবন্ধিত ইমেইল দিন। সেখানে ৬ সংখ্যার যাচাইকরণ কোড পাঠানো হবে।" :
+      stage === "otp" ? recoveryEmail + " ঠিকানায় পাঠানো ৬ সংখ্যার কোড লিখুন। ইমেইলের কোনো লিংকে চাপ দেবেন না।" :
+      "ইমেইল কোড যাচাই হয়েছে। নিরাপত্তার জন্য নিবন্ধিত মোবাইল নম্বর মিলিয়ে নতুন পাসওয়ার্ড দিন।";
+    recoverySubmit.textContent = stage === "request" ? "ইমেইলে কোড পাঠান" : stage === "otp" ? "কোড যাচাই করুন" : "নতুন পাসওয়ার্ড সংরক্ষণ করুন";
     setMessage("");
   }
   function hideRecovery() {
@@ -181,7 +185,6 @@
     if (event === "PASSWORD_RECOVERY" && session?.user) {
       recoveryFlowDetected = true;
       recoveryUser = session.user;
-      showRecovery("verify");
     }
   });
   client.auth.getSession().then(({ data, error }) => {
@@ -194,7 +197,8 @@
     // recovery session to dashboard.html just because the URL has no hash.
     if (data.session && (recoveryFlowDetected || hasRecoveryCallback)) {
       recoveryUser = data.session.user;
-      showRecovery("verify");
+      recoveryUser = data.session.user;
+      showRecovery("password");
     } else if (data.session && !hasRecoveryCallback) {
       window.location.href = "dashboard.html";
     }
