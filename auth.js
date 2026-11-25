@@ -20,6 +20,11 @@
   const loginOptions = document.getElementById("login-options");
   const authSwitch = document.getElementById("auth-switch");
   let mode = "login";
+  const recoveryPanel = document.getElementById("recovery-panel");
+  const recoveryLink = document.getElementById("forgot-password-link");
+  const recoverySubmit = document.getElementById("recovery-submit");
+  let recoveryStage = "request";
+  let recoveryUser = null;
 
   function setMessage(text, type = "") {
     message.textContent = text;
@@ -100,6 +105,84 @@
     authSwitch.hidden = signup;
     setMessage("");
   }
+  function showRecovery(stage) {
+    recoveryStage = stage;
+    form.hidden = true;
+    document.querySelector(".auth-tabs").hidden = true;
+    authSwitch.hidden = true;
+    recoveryLink.hidden = true;
+    recoveryPanel.hidden = false;
+    document.getElementById("recovery-email-group").hidden = stage !== "request";
+    document.getElementById("recovery-phone-group").hidden = stage !== "verify";
+    document.getElementById("new-password-group").hidden = stage !== "verify";
+    document.getElementById("new-password-confirm-group").hidden = stage !== "verify";
+    document.getElementById("recovery-title").textContent = stage === "request" ? "পাসওয়ার্ড পুনরুদ্ধার" : "নতুন পাসওয়ার্ড সেট করুন";
+    document.getElementById("recovery-help").textContent = stage === "request"
+      ? "নিবন্ধিত ইমেইল দিন। ইমেইলে নিরাপদ রিসেট লিংক পাঠানো হবে।"
+      : "ইমেইলের লিংকে প্রবেশের পর আপনার নিবন্ধিত মোবাইল নম্বর মিলিয়ে নতুন পাসওয়ার্ড দিন।";
+    recoverySubmit.textContent = stage === "request" ? "ইমেইলে রিসেট লিংক পাঠান" : "নতুন পাসওয়ার্ড সংরক্ষণ করুন";
+    setMessage("");
+  }
+  function hideRecovery() {
+    recoveryPanel.hidden = true;
+    form.hidden = false;
+    document.querySelector(".auth-tabs").hidden = false;
+    recoveryLink.hidden = false;
+    setMode("login");
+  }
+  recoveryLink.addEventListener("click", () => showRecovery("request"));
+  document.getElementById("recovery-cancel").addEventListener("click", hideRecovery);
+  recoverySubmit.addEventListener("click", async () => {
+    recoverySubmit.disabled = true;
+    try {
+      if (recoveryStage === "request") {
+        const recoveryEmail = document.getElementById("recovery-email").value.trim();
+        if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(recoveryEmail)) throw new Error("সঠিক ইমেইল ঠিকানা লিখুন।");
+        const { error } = await client.auth.resetPasswordForEmail(recoveryEmail, {
+          redirectTo: window.location.origin + "/auth.html"
+        });
+        if (error) throw error;
+        setMessage("যদি এই ইমেইলে অ্যাকাউন্ট থাকে, তাহলে পাসওয়ার্ড রিসেটের নির্দেশনা পাঠানো হয়েছে। ইনবক্স ও স্প্যাম ফোল্ডার দেখুন।", "success");
+      } else {
+        const phoneValue = document.getElementById("recovery-phone").value.trim().replace(/[\\s-]/g, "");
+        if (!/^01[3-9][0-9]{8}$/.test(phoneValue)) throw new Error("সঠিক ১১ সংখ্যার মোবাইল নম্বর লিখুন।");
+        const { data: profile, error: profileError } = await client.from("profiles").select("phone").eq("id", recoveryUser.id).single();
+        if (profileError || !profile || String(profile.phone || "").replace(/[\\s-]/g, "") !== phoneValue) throw new Error("ইমেইল ও নিবন্ধিত মোবাইল নম্বরের মিল পাওয়া যায়নি।");
+        const newPassword = document.getElementById("new-password").value;
+        const confirmNew = document.getElementById("new-password-confirm").value;
+        if (newPassword.length < 8) throw new Error("নতুন পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে।");
+        if (newPassword !== confirmNew) throw new Error("দুটি নতুন পাসওয়ার্ড মিলছে না।");
+        const { error } = await client.auth.updateUser({ password: newPassword });
+        if (error) throw error;
+        await client.auth.signOut();
+        setMessage("পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে। এখন নতুন পাসওয়ার্ড দিয়ে লগইন করুন।", "success");
+        recoveryPanel.hidden = true;
+        form.hidden = false;
+        document.querySelector(".auth-tabs").hidden = false;
+        recoveryLink.hidden = false;
+        setMode("login");
+      }
+    } catch (error) {
+      setMessage(error.message || "অনুরোধটি সম্পন্ন হয়নি। আবার চেষ্টা করুন।", "error");
+    } finally {
+      recoverySubmit.disabled = false;
+    }
+  });
+  client.auth.onAuthStateChange((event, session) => {
+    if (event === "PASSWORD_RECOVERY" && session?.user) {
+      recoveryUser = session.user;
+      showRecovery("verify");
+    }
+  });
+  client.auth.getSession().then(({ data }) => {
+    const hash = new URLSearchParams(window.location.hash.slice(1));
+    if (data.session && (hash.get("type") === "recovery" || hash.get("type") === "magiclink")) {
+      recoveryUser = data.session.user;
+      showRecovery("verify");
+    } else if (data.session) {
+      window.location.href = "dashboard.html";
+    }
+  });
   loginTab.addEventListener("click", () => setMode("login"));
   signupTab.addEventListener("click", () => setMode("signup"));
   document.getElementById("switch-to-signup").addEventListener("click", () => setMode("signup"));
@@ -161,8 +244,5 @@
     } finally {
       submit.disabled = false;
     }
-  });
-  client.auth.getSession().then(({ data }) => {
-    if (data.session) window.location.href = "dashboard.html";
   });
 })();
