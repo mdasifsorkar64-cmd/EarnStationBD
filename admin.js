@@ -193,7 +193,7 @@ async function loadOffers(){
     $("withdrawals-list").textContent="লোড হচ্ছে...";
     const {data:{session}}=await client.auth.getSession();
     if(!session) throw new Error("আবার লগইন করুন।");
-    const response=await fetch("http://127.0.0.1:3001/api/admin/withdrawals",{headers:{Authorization:"Bearer "+session.access_token}});
+    const response=await fetch("/api/admin/withdrawals",{headers:{Authorization:"Bearer "+session.access_token}});
     const result=await response.json();
     if(!response.ok) throw new Error(result.error||"উইথড্র তালিকা লোড করা যায়নি।");
     const data=result.withdrawals||[];
@@ -224,7 +224,7 @@ async function loadOffers(){
           if(cleanTransactionId.length<4||cleanTransactionId.length>100){throw new Error("সঠিক Transaction ID লিখুন (৪–১০০ অক্ষর)।");}
           if(!confirm("সদস্যকে "+money(w.amount)+" সত্যিই পাঠানো হয়েছে এবং Transaction ID "+cleanTransactionId+" সঠিক? শুধু টাকা পাঠানোর পর SUCCESS করুন।"))return;
           const {data:{session:active}}=await client.auth.getSession();
-          const res=await fetch("http://127.0.0.1:3001/api/admin/withdrawals/complete",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+active.access_token},body:JSON.stringify({withdrawal_id:w.id,transaction_id:cleanTransactionId})});
+          const res=await fetch("/api/admin/withdrawals/complete",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+active.access_token},body:JSON.stringify({withdrawal_id:w.id,transaction_id:cleanTransactionId})});
           const out=await res.json();if(!res.ok)throw new Error(out.error||"স্ট্যাটাস আপডেট হয়নি।");
           message(out.status==="refunded"?"৫ ঘণ্টা পার হয়েছে—টাকা সদস্যকে ফেরত দেওয়া হয়েছে।":"পেমেন্ট SUCCESS হিসেবে সংরক্ষিত হয়েছে।");
           await loadWithdrawals();
