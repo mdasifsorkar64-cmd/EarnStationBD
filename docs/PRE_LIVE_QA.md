@@ -7,14 +7,14 @@ This checklist is for the owner and release reviewer before changes are merged i
 - [ ] Review and approve PR #2 (Bengali authentication errors).
 - [ ] Review and approve PR #3 (Cloudflare Pages withdrawal API).
 - [ ] PR #6 is stacked on PR #3; merge/test PR #3 first, then PR #6.
-- [ ] PR #7 is stacked on PR #3; review/test the combined Preview before merging either PR.
+- [ ] PR #7 is stacked on PR #3 and now includes the gross/fee/net admin withdrawal display. Review/test its latest combined Preview before merging either PR.
 - [ ] Review PR #4 and PR #5 (Supabase EXECUTE privilege hardening). Their migrations are present in live `supabase_migrations.schema_migrations`: `20261124090804` (`restrict_anon_admin_rpcs`) and `20261124091625` (`restrict_internal_function_execution`). Live privilege check: 27 public `admin_%` SECURITY DEFINER functions are not executable by `anon` and remain executable by `authenticated`.
 - [ ] Review PR #7 (owner bKash/Nagad destination settings). Its migration `20261124143922` (`owner_partner_payment_destinations`) is present in live `supabase_migrations.schema_migrations`. The table and both admin RPCs exist; both RPCs deny `anon` and allow `authenticated`; direct table grants to `anon`, `authenticated`, and `public` are absent. No receiving numbers have been entered.
 - [ ] Keep all PRs Draft until owner explicitly approves the release.
 
 ## Cloudflare Production bindings
 
-Before merging/deploying the withdrawal API, confirm these exist in the **Production** environment for Pages project `earnstationbd`:
+The owner previously confirmed that these three variables were saved in the **Production** environment for Pages project `earnstationbd`. Re-check their presence before the release:
 
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY` (public anon/publishable key only; never service-role)
@@ -40,7 +40,7 @@ Do not rotate the encryption key during this release. Never paste it into GitHub
 ### Admin withdrawal
 - [ ] Unauthenticated `/api/admin/withdrawals` request is rejected with a JSON response (not an HTML fallback).
 - [ ] Non-admin account is rejected.
-- [ ] Admin sees gross, fee, and net payable amounts.
+- [ ] Admin sees gross, fee, and net payable amounts on the latest Preview.
 - [ ] Test withdrawals cannot be marked SUCCESS.
 - [ ] SUCCESS is recorded only after the real transfer and verified transaction ID.
 - [ ] Auto-refund remains active; never send a payout to a refunded request.
@@ -57,7 +57,7 @@ Do not rotate the encryption key during this release. Never paste it into GitHub
 ## Release safety
 
 - [x] Cloudflare Preview build succeeded for PR #2 commit `90540ab`, PR #3 commit `298f808`, and PR #6 commit `2672525`.
-- [x] PR #7 combined Preview build succeeded for commit `a6eae96` at `https://c9d2d914.earnstationbd.pages.dev`; follow-up Preview build succeeded for commit `f24a491` at `https://c19583e3.earnstationbd.pages.dev`.
+- [x] PR #7 combined Preview build succeeded for the latest commit `34bb6cc0d9061bbe665146a4754ec0840f107037`; latest build URL: `https://558523cf.earnstationbd.pages.dev` (Admin route: `/admin.html`). This commit includes owner receiving-destination settings and gross/fee/net withdrawal display.
 - [ ] Complete authenticated manual QA on the latest PR #7 Preview; build success alone does not prove the admin UI/API flow works.
 - [ ] Confirm no secrets or personal payout numbers appear in diffs, logs, or PR comments.
 - [ ] No real payment, balance adjustment, or test ledger cleanup is performed as part of QA.
