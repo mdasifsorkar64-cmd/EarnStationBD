@@ -138,7 +138,7 @@
     $("save-payout-fee").disabled=true;
     $("payout-fee-status").textContent="সংরক্ষণ হচ্ছে...";
     try{
-      const {error}=await client.rpc("admin_update_member_payout_fee",{p_fee:fee});
+      const {error}=await client.rpc("admin_update_member_payout_fee",{p_fee_bdt:fee});
       if(error)throw error;
       await loadSettings();
       message("সদস্য উত্তোলন চার্জ আপডেট হয়েছে।");
