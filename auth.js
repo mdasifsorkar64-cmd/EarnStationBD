@@ -150,7 +150,7 @@
     try {
       if (recoveryStage === "request") {
         recoveryEmail = document.getElementById("recovery-email").value.trim().toLowerCase();
-        if (!/^[^\s@]+@[^\s@]+\\.[^\s@]+$/.test(recoveryEmail)) throw new Error("সঠিক ইমেইল ঠিকানা লিখুন।");
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recoveryEmail)) throw new Error("সঠিক ইমেইল ঠিকানা লিখুন।");
         const { error } = await client.auth.resetPasswordForEmail(recoveryEmail);
         if (error) throw error;
         showRecovery("otp");
