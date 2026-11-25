@@ -1,6 +1,5 @@
--- Add a dedicated admin control for the fixed member withdrawal fee.
--- The existing request_withdrawal() already reads platform_settings.member_payout_fee_bdt
--- and snapshots the fee/net amount into each new withdrawal request.
+-- Document and reassert the existing admin-only payout fee controls.
+-- The fixed fee is snapshotted by request_withdrawal() into each new withdrawal.
 
 create or replace function public.admin_get_member_payout_fee()
 returns numeric
@@ -8,23 +7,19 @@ language plpgsql
 security definer
 set search_path = public
 as $function$
-declare
-  v_fee numeric;
 begin
   if not public.is_admin() then
     raise exception 'Admin access required';
   end if;
-
-  select coalesce(s.member_payout_fee_bdt, 0)
-    into v_fee
-  from public.platform_settings s
-  where s.id = true;
-
-  return coalesce(v_fee, 0);
+  return (
+    select coalesce(s.member_payout_fee_bdt, 0)
+    from public.platform_settings s
+    where s.id = true
+  );
 end;
 $function$;
 
-create or replace function public.admin_update_member_payout_fee(p_fee numeric)
+create or replace function public.admin_update_member_payout_fee(p_fee_bdt numeric)
 returns void
 language plpgsql
 security definer
@@ -34,13 +29,13 @@ begin
   if not public.is_admin() then
     raise exception 'Admin access required';
   end if;
-
-  if p_fee is null or p_fee < 0 or p_fee > 100 then
-    raise exception 'উত্তোলন চার্জ ০ থেকে ১০০ টাকার মধ্যে হতে হবে।';
+  if p_fee_bdt is null or p_fee_bdt < 0 or p_fee_bdt > 100
+     or round(p_fee_bdt, 2) <> p_fee_bdt then
+    raise exception 'উত্তোলন চার্জ ০ থেকে ১০০ টাকার মধ্যে হতে হবে (সর্বোচ্চ ২ দশমিক)।';
   end if;
 
   update public.platform_settings
-  set member_payout_fee_bdt = round(p_fee, 2),
+  set member_payout_fee_bdt = p_fee_bdt,
       updated_at = now(),
       updated_by = auth.uid()
   where id = true;
@@ -53,7 +48,10 @@ begin
   values (
     auth.uid(),
     'member_payout_fee_updated',
-    jsonb_build_object('member_payout_fee_bdt', round(p_fee, 2))
+    jsonb_build_object(
+      'fee_bdt', p_fee_bdt,
+      'note', 'Fixed payout processing charge; member deduction at withdrawal only'
+    )
   );
 end;
 $function$;
