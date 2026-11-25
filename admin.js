@@ -28,12 +28,11 @@
   const ownerStatus=v=>({awaiting_partner_payment:"পার্টনারের কাছে পাওনা",received:"পার্টনারের টাকা পাওয়া গেছে",reversed:"বাতিল / Reversed"}[v]||v);
   async function loadOwnerWallet(){
     $("owner-allocations").textContent="লোড হচ্ছে...";
-    const [summary,allocations,history]=await Promise.all([
-      client.rpc("admin_get_owner_wallet_summary"),
-      client.rpc("admin_list_owner_allocations"),
-      client.from("owner_wallet_withdrawals").select("id,amount,payout_method,payment_transaction_id,note,created_at").order("created_at",{ascending:false}).limit(100)
-    ]);
-    if(summary.error)throw summary.error;if(allocations.error)throw allocations.error;if(history.error)throw history.error;
+    const [summary,allocations,history,receiving]=await Promise.all([client.rpc("admin_get_owner_wallet_summary"),client.rpc("admin_list_owner_allocations"),client.from("owner_wallet_withdrawals").select("id,amount,payout_method,payment_transaction_id,note,created_at").order("created_at",{ascending:false}).limit(100),client.rpc("admin_get_owner_partner_payment_destinations")]);
+    if(summary.error)throw summary.error;if(allocations.error)throw allocations.error;if(history.error)throw history.error;if(receiving.error)throw receiving.error;
+    const destination=receiving.data?.[0]||{};
+    $("owner-bkash-number").value=destination.bkash_number||"";$("owner-bkash-name").value=destination.bkash_account_name||"";$("owner-nagad-number").value=destination.nagad_number||"";$("owner-nagad-name").value=destination.nagad_account_name||"";
+    $("owner-receiving-status").textContent=destination.updated_at?"সর্বশেষ সংরক্ষণ: "+fmt(destination.updated_at):"এখনো কোনো গ্রহণের নম্বর সংরক্ষণ করা হয়নি।";
     const s=Array.isArray(summary.data)?summary.data[0]:summary.data;
     if(!s)throw new Error("মালিকের Wallet হিসাব পাওয়া যায়নি।");
     $("owner-share-total").textContent=ownerMoney(s.owner_share_total_bdt);
@@ -80,6 +79,24 @@
     try{const {error}=await client.rpc("admin_record_owner_withdrawal",{p_amount:amount,p_method:method,p_transaction_id:txid,p_note:note});if(error)throw error;
       $("owner-withdrawal-form").reset();message("মালিকের উত্তোলন রেকর্ড হয়েছে।");await loadOwnerWallet();
     }catch(e){message(e.message||"উত্তোলন রেকর্ড করা যায়নি।",true);}finally{$("owner-withdrawal-submit").disabled=false;}
+  });
+  $("owner-receiving-form").addEventListener("submit",async event=>{
+    event.preventDefault();
+    const bkash=$("owner-bkash-number").value.trim().replaceAll(" ","").replaceAll("-","");
+    const bkashName=$("owner-bkash-name").value.trim();
+    const nagad=$("owner-nagad-number").value.trim().replaceAll(" ","").replaceAll("-","");
+    const nagadName=$("owner-nagad-name").value.trim();
+    const validNumber=value=>!value||(value.length===11&&value.startsWith("01")&&"3456789".includes(value[2])&&Number.isInteger(Number(value)));
+    if(!bkash&&!nagad){$("owner-receiving-status").textContent="বিকাশ অথবা নগদের অন্তত একটি নম্বর দিন।";return;}
+    if(!validNumber(bkash)||!validNumber(nagad)){$("owner-receiving-status").textContent="সঠিক ১১ সংখ্যার বাংলাদেশি মোবাইল নম্বর লিখুন।";return;}
+    if((bkash&&bkashName.length<2)||(nagad&&nagadName.length<2)){$("owner-receiving-status").textContent="যে নম্বরটি ব্যবহার করবেন, তার অ্যাকাউন্টের নামও দিন।";return;}
+    const save=$("owner-receiving-save");save.disabled=true;$("owner-receiving-status").textContent="সংরক্ষণ হচ্ছে...";
+    try{
+      const {error}=await client.rpc("admin_save_owner_partner_payment_destinations",{p_bkash_number:bkash||null,p_bkash_account_name:bkashName||null,p_nagad_number:nagad||null,p_nagad_account_name:nagadName||null});
+      if(error)throw error;
+      $("owner-receiving-status").textContent="বিকাশ/নগদ গ্রহণের তথ্য সংরক্ষিত হয়েছে।";message("পার্টনারের কমিশন গ্রহণের নম্বর সংরক্ষিত হয়েছে।");
+    }catch(e){$("owner-receiving-status").textContent=e.message||"নম্বর সংরক্ষণ করা যায়নি।";message(e.message||"নম্বর সংরক্ষণ করা যায়নি।",true);}
+    finally{save.disabled=false;}
   });
   $("refresh-owner-wallet").addEventListener("click",()=>loadOwnerWallet().catch(e=>message(e.message,true)));
 
@@ -255,7 +272,7 @@ async function loadOffers(){
   }catch(e){$("site-status").textContent=e.message||"সংরক্ষণ করা যায়নি।";message(e.message||"সংরক্ষণ করা যায়নি।",true);}finally{$("save-site").disabled=false;}});
   $("refresh-site").addEventListener("click",()=>loadSiteSettings().catch(e=>message(e.message,true)));
 
-  async function refreshAll(){const tasks=[ ["সদস্য",loadMembers], ["অফার",loadOffers], ["কমিশন",loadConversions], ["উত্তোলন",loadWithdrawals], ["মালিকের Wallet",loadOwnerWallet], ["আয় ও সীমা",loadSettings], ["ওয়েবসাইট",loadSiteSettings], ["রেফারেল",loadReferralSettings] ];const results=await Promise.allSettled(tasks.map(([,fn])=>fn()));const failed=results.map((r,i)=>r.status==="rejected"?tasks[i][0]+": "+(r.reason?.message||"লোড হয়নি"):null).filter(Boolean);if(failed.length)message("কিছু তথ্য লোড হয়নি। অন্য অংশগুলো আপডেট হয়েছে। "+failed.join(" | "),true);else message("সব তথ্য আপডেট হয়েছে।");}
+  async function refreshAll(){try{await Promise.all([loadMembers(),loadOffers(),loadConversions(),loadWithdrawals(),loadOwnerWallet(),loadSettings(),loadSiteSettings(),loadReferralSettings()]);message("সব তথ্য আপডেট হয়েছে।");}catch(e){message(e.message||"তথ্য লোড করা যায়নি।",true);}}
   $("refresh-all").addEventListener("click",refreshAll);
   (async()=>{try{const {data,error}=await client.auth.getSession();if(error)throw error;if(!data.session){location.replace("auth.html");return;}const {data:profile,error:pe}=await client.from("profiles").select("role").eq("id",data.session.user.id).single();if(pe)throw pe;if(profile?.role!=="admin"){location.replace("dashboard.html");return;}
     $("admin-top").hidden=false;$("admin-content").hidden=false;$("admin-footer").hidden=false;message("অ্যাডমিন যাচাই সফল।");await refreshAll();
