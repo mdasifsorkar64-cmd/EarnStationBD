@@ -7,8 +7,8 @@ This checklist is for the owner and release reviewer before changes are merged i
 - [ ] Review and approve PR #2 (Bengali authentication errors).
 - [ ] Review and approve PR #3 (Cloudflare Pages withdrawal API).
 - [ ] PR #6 is stacked on PR #3; merge/test PR #3 first, then PR #6.
-- [ ] Review PR #4 and PR #5 (Supabase EXECUTE privilege hardening). Their migrations were applied and verified separately; confirm migration history before release.
-- [ ] Review PR #7 (owner bKash/Nagad destination settings). Its migration `owner_partner_payment_destinations` has already been applied to live Supabase and verified: the table and both admin RPCs exist, RLS is enabled, and direct table grants to `anon`, `authenticated`, and `public` are absent. No receiving numbers have been entered. Confirm migration history before release.
+- [ ] Review PR #4 and PR #5 (Supabase EXECUTE privilege hardening). Their migrations are present in live `supabase_migrations.schema_migrations`: `20261124090804` (`restrict_anon_admin_rpcs`) and `20261124091625` (`restrict_internal_function_execution`). Live privilege check: 27 public `admin_%` SECURITY DEFINER functions are not executable by `anon` and remain executable by `authenticated`.
+- [ ] Review PR #7 (owner bKash/Nagad destination settings). Its migration `20261124143922` (`owner_partner_payment_destinations`) is present in live `supabase_migrations.schema_migrations`. The table and both admin RPCs exist; both RPCs deny `anon` and allow `authenticated`; direct table grants to `anon`, `authenticated`, and `public` are absent. No receiving numbers have been entered.
 - [ ] Keep all PRs Draft until owner explicitly approves the release.
 
 ## Cloudflare Production bindings
@@ -54,7 +54,7 @@ Do not rotate the encryption key during this release. Never paste it into GitHub
 - [ ] Owner withdrawal form remains an accounting record after actual money movement.
 
 ## Release safety
-- [ ] Check latest Cloudflare Preview deployment corresponds to the reviewed PR head.
+- [x] Check latest Cloudflare Preview deployment corresponds to reviewed PR heads: PR #2 `90540ab`, PR #3 `298f808`, PR #6 `2672525`, PR #7 `ebb8e4c` (all successful Cloudflare Preview builds).
 - [ ] Confirm no secrets or personal payout numbers appear in diffs, logs, or PR comments.
 - [ ] No real payment, balance adjustment, or test ledger cleanup is performed as part of QA.
 - [x] PR #7 receiving-destinations migration applied and verified on live Supabase before release; no payout destinations or money movements were added.
