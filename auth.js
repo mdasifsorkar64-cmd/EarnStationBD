@@ -25,6 +25,15 @@
   const recoverySubmit = document.getElementById("recovery-submit");
   let recoveryStage = "request";
   let recoveryUser = null;
+  // Supabase may return a PKCE callback as ?code=... rather than a #type=recovery hash.
+  // Keep the recovery route from being mistaken for an ordinary signed-in visit.
+  let recoveryFlowDetected = false;
+  const recoveryQuery = new URLSearchParams(window.location.search);
+  const recoveryHash = new URLSearchParams(window.location.hash.slice(1));
+  const hasRecoveryCallback =
+    recoveryQuery.has("code") ||
+    recoveryHash.get("type") === "recovery" ||
+    recoveryHash.get("type") === "magiclink";
 
   function setMessage(text, type = "") {
     message.textContent = text;
@@ -170,18 +179,26 @@
   });
   client.auth.onAuthStateChange((event, session) => {
     if (event === "PASSWORD_RECOVERY" && session?.user) {
+      recoveryFlowDetected = true;
       recoveryUser = session.user;
       showRecovery("verify");
     }
   });
-  client.auth.getSession().then(({ data }) => {
-    const hash = new URLSearchParams(window.location.hash.slice(1));
-    if (data.session && (hash.get("type") === "recovery" || hash.get("type") === "magiclink")) {
+  client.auth.getSession().then(({ data, error }) => {
+    if (error) {
+      setMessage("সেশন যাচাই করা যায়নি। রিসেট লিংকটি নতুন করে খুলুন।", "error");
+      return;
+    }
+
+    // The recovery callback can be a PKCE ?code=... URL. Do not send a
+    // recovery session to dashboard.html just because the URL has no hash.
+    if (data.session && (recoveryFlowDetected || hasRecoveryCallback)) {
       recoveryUser = data.session.user;
       showRecovery("verify");
-    } else if (data.session) {
+    } else if (data.session && !hasRecoveryCallback) {
       window.location.href = "dashboard.html";
     }
+    // If a PKCE code is still being exchanged, wait for PASSWORD_RECOVERY.
   });
   loginTab.addEventListener("click", () => setMode("login"));
   signupTab.addEventListener("click", () => setMode("signup"));
