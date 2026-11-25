@@ -206,7 +206,6 @@
     // recovery session to dashboard.html just because the URL has no hash.
     if (data.session && (recoveryFlowDetected || hasRecoveryCallback)) {
       recoveryUser = data.session.user;
-      recoveryUser = data.session.user;
       showRecovery("password");
     } else if (data.session && !hasRecoveryCallback) {
       window.location.href = "dashboard.html";
