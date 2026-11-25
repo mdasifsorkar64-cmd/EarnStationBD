@@ -103,13 +103,19 @@
 
   async function loadSettings(){
     $("settings-status").textContent="সেটিংস লোড হচ্ছে...";
-    const {data,error}=await client.rpc("admin_get_platform_settings");
-    if(error)throw error;
+    $("payout-fee-status").textContent="চার্জ সেটিংস লোড হচ্ছে...";
+    const [{data,error},{data:fee,error:feeError}]=await Promise.all([
+      client.rpc("admin_get_platform_settings"),
+      client.rpc("admin_get_member_payout_fee")
+    ]);
+    if(error)throw error;if(feeError)throw feeError;
     $("minimum-withdrawal").value=data.minimum_withdrawal;
     $("ad-reward").value=data.ad_reward;
     $("daily-ad-limit").value=data.daily_ad_limit;
     $("ads-enabled").checked=!!data.ads_enabled;
+    $("member-payout-fee").value=Number(fee??0).toFixed(2);
     $("settings-status").textContent="সেটিংস লোড হয়েছে। বিজ্ঞাপন সরবরাহকারী সংযোগের অবস্থা: এখনো যুক্ত নয়।";
+    $("payout-fee-status").textContent="বর্তমান সদস্য উত্তোলন চার্জ: ৳ "+Number(fee??0).toFixed(2);
   }
   $("settings-form").addEventListener("submit",async event=>{
     event.preventDefault();
@@ -124,6 +130,21 @@
       message("আয় ও উত্তোলনের নিয়ম আপডেট হয়েছে।");
     }catch(e){$("settings-status").textContent=e.message||"সেটিংস সংরক্ষণ করা যায়নি。";message(e.message||"সেটিংস সংরক্ষণ করা যায়নি।",true);}
     finally{$("save-settings").disabled=false;}
+  });
+  $("payout-fee-form").addEventListener("submit",async event=>{
+    event.preventDefault();
+    const fee=Number($("member-payout-fee").value);
+    if(!Number.isFinite(fee)||fee<0||fee>100){$("payout-fee-status").textContent="চার্জ ০ থেকে ১০০ টাকার মধ্যে লিখুন।";return;}
+    if(!confirm("সতর্কতা: এই পরিবর্তনটি লাইভ EarnStationBD-র নতুন উত্তোলনের চার্জে সঙ্গে সঙ্গে কার্যকর হবে। পুরোনো উত্তোলন বদলাবে না। আপনি কি ৳ "+fee.toFixed(2)+" চার্জ সংরক্ষণ করতে চান?"))return;
+    $("save-payout-fee").disabled=true;
+    $("payout-fee-status").textContent="সংরক্ষণ হচ্ছে...";
+    try{
+      const {error}=await client.rpc("admin_update_member_payout_fee",{p_fee_bdt:fee});
+      if(error)throw error;
+      await loadSettings();
+      message("সদস্য উত্তোলন চার্জ আপডেট হয়েছে।");
+    }catch(e){$("payout-fee-status").textContent=e.message||"চার্জ সংরক্ষণ করা যায়নি।";message(e.message||"চার্জ সংরক্ষণ করা যায়নি।",true);}
+    finally{$("save-payout-fee").disabled=false;}
   });
   $("refresh-settings").addEventListener("click",()=>Promise.all([loadSettings(),loadReferralSettings()]).catch(e=>message(e.message,true)));
   async function loadReferralSettings(){
