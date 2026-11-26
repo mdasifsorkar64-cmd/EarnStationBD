@@ -143,7 +143,7 @@ test("admin withdrawal list returns decrypted payout details only after admin ve
   globalThis.fetch = async (url) => {
     const value = String(url);
     if (value.endsWith("/auth/v1/user")) return Response.json({ id: "admin-1" });
-    if (value.includes("/rest/v1/profiles?") && value.includes("select=role%2Caccount_status")) {
+    if (value.includes("/rest/v1/profiles?") && value.includes("select=role")) {
       return Response.json([{ role: "admin", account_status: "active" }]);
     }
     if (value.includes("/rest/v1/withdrawal_requests?")) {
