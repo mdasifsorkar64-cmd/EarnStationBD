@@ -46,6 +46,16 @@
 <div id="members-list" class="admin-list">সদস্য তালিকা লোড হচ্ছে...</div>
 <p class="admin-help">দেখানো তথ্য: User ID, ইমেইল, নাম, ফোন, ভূমিকা, নিবন্ধনের তারিখ ও সর্বশেষ লগইন। পাসওয়ার্ড/OTP/সেশন টোকেন দেখানো হয় না।</p>
 </div>
+<div class="admin-panel" id="backup-admin-panel">
+  <h3>Backup Admin ও জরুরি পুনরুদ্ধার</h3>
+  <p class="admin-help">অনুমোদিত Backup Gmail: <b>mdasifsorkar1414@gmail.com</b>। আগে এই Gmail দিয়ে সদস্য হিসেবে নিবন্ধন ও ইমেইল যাচাই করতে হবে। এরপর Primary Admin এখান থেকে Admin সক্রিয় করতে পারবেন।</p>
+  <div id="backup-admin-status" class="admin-message" role="status">Backup Admin-এর অবস্থা যাচাই হচ্ছে...</div>
+  <div class="admin-row-actions">
+    <button type="button" id="activate-backup-admin" hidden>Backup Admin সক্রিয় করুন</button>
+    <button type="button" id="recover-primary-admin" class="secondary" hidden>Primary Admin পুনরুদ্ধার করুন</button>
+  </div>
+  <p class="admin-help">Backup Admin সক্রিয় হলে তিনি পূর্ণ Admin ক্ষমতা পাবেন। তিনি Primary Admin-এর অ্যাকাউন্ট Active করতে পারবেন। Admin তালিকা থেকে কোনো Admin-কে Suspend করা যায় না।</p>
+</div>
 </section>
 <section class="admin-view" id="view-offers">
 <div class="view-heading"><div><p>PARTNER OFFERS</p><h2>অফার পরিচালনা</h2><span>নতুন অফার যোগ ও অফারের অবস্থা নিয়ন্ত্রণ</span></div><button class="secondary" id="refresh-offers">↻ রিফ্রেশ</button></div>
