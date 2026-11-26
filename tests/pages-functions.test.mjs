@@ -181,3 +181,40 @@ test("admin withdrawal list returns decrypted payout details only after admin ve
     globalThis.fetch = originalFetch;
   }
 });
+
+
+test("member withdrawal rejects oversized bodies even without Content-Length", async () => {
+  const req = request("https://earnstationbd.example/api/withdrawal", "POST", {
+    Origin: "https://earnstationbd.example",
+    Authorization: "Bearer member-session"
+  }, "x".repeat(5000));
+  const res = await memberWithdrawal({
+    request: req,
+    env: { SUPABASE_URL: "https://test.supabase.co", SUPABASE_PUBLISHABLE_KEY: "public-key", PAYOUT_ENCRYPTION_KEY: "A".repeat(44) }
+  });
+  assert.equal(res.status, 413);
+});
+
+test("admin withdrawal rejects oversized review bodies", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    if (String(url).endsWith("/auth/v1/user")) return Response.json({ id: "admin-1" });
+    if (String(url).includes("/rest/v1/profiles?") && String(url).includes("select=role")) {
+      return Response.json([{ role: "admin", account_status: "active" }]);
+    }
+    throw new Error("Unexpected URL " + url);
+  };
+  try {
+    const req = request("https://earnstationbd.example/api/admin/withdrawals", "POST", {
+      Origin: "https://earnstationbd.example",
+      Authorization: "Bearer admin-session"
+    }, "x".repeat(3000));
+    const res = await adminWithdrawals({
+      request: req,
+      env: { SUPABASE_URL: "https://test.supabase.co", SUPABASE_PUBLISHABLE_KEY: "public-key", PAYOUT_ENCRYPTION_KEY: "A".repeat(44) }
+    });
+    assert.equal(res.status, 413);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
