@@ -10,7 +10,7 @@ to anon, authenticated
 using (id = true);
 
 revoke all on table public.site_settings from public, anon, authenticated;
-grant select (site_name, site_tagline, announcement, contact_email,
+grant select (id, site_name, site_tagline, announcement, contact_email,
               facebook_url, telegram_url, whatsapp_url, youtube_url)
 on public.site_settings to anon, authenticated;
 
