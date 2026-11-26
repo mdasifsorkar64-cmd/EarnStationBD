@@ -26,6 +26,9 @@
   let recoveryStage = "request";
   let recoveryUser = null;
   let recoveryEmail = "";
+  let recoveryPhone = "";
+  let recoveryOAuthHandled = false;
+  const recoverySessionKey = "earnstationbd_google_recovery";
   // Supabase may return a PKCE callback as ?code=... rather than a #type=recovery hash.
   // Keep the recovery route from being mistaken for an ordinary signed-in visit.
   let recoveryFlowDetected = false;
@@ -123,17 +126,17 @@
     recoveryLink.hidden = true;
     recoveryPanel.hidden = false;
     document.getElementById("recovery-email-group").hidden = stage !== "request";
-    document.getElementById("recovery-otp-group").hidden = stage !== "otp";
-    document.getElementById("recovery-phone-group").hidden = stage !== "password";
+    document.getElementById("recovery-phone-group").hidden = stage !== "request";
+    document.getElementById("recovery-otp-group").hidden = true;
     document.getElementById("new-password-group").hidden = stage !== "password";
     document.getElementById("new-password-confirm-group").hidden = stage !== "password";
     document.getElementById("recovery-title").textContent =
-      stage === "request" ? "পাসওয়ার্ড পুনরুদ্ধার" : stage === "otp" ? "ইমেইল কোড যাচাই" : "নতুন পাসওয়ার্ড সেট করুন";
+      stage === "request" ? "পাসওয়ার্ড পুনরুদ্ধার" : stage === "google" ? "Google পরিচয় যাচাই" : "নতুন পাসওয়ার্ড সেট করুন";
     document.getElementById("recovery-help").textContent =
-      stage === "request" ? "নিবন্ধিত ইমেইল দিন। সেখানে ৬ সংখ্যার যাচাইকরণ কোড পাঠানো হবে।" :
-      stage === "otp" ? recoveryEmail + " ঠিকানায় পাঠানো ৬ সংখ্যার কোড লিখুন। ইমেইলের কোনো লিংকে চাপ দেবেন না।" :
-      "ইমেইল কোড যাচাই হয়েছে। নিরাপত্তার জন্য নিবন্ধিত মোবাইল নম্বর মিলিয়ে নতুন পাসওয়ার্ড দিন।";
-    recoverySubmit.textContent = stage === "request" ? "ইমেইলে কোড পাঠান" : stage === "otp" ? "কোড যাচাই করুন" : "নতুন পাসওয়ার্ড সংরক্ষণ করুন";
+      stage === "request" ? "আপনার নিবন্ধিত Gmail ও মোবাইল নম্বর লিখুন। পরের ধাপে Google দিয়ে পরিচয় যাচাই হবে।" :
+      stage === "google" ? recoveryEmail + " Gmail-এ Google দিয়ে সাইন ইন করে পরিচয় নিশ্চিত করুন।" :
+      "Google পরিচয় ও নিবন্ধিত মোবাইল নম্বর যাচাই হয়েছে। এখন নতুন পাসওয়ার্ড দিন।";
+    recoverySubmit.textContent = stage === "request" ? "তথ্য যাচাই করে এগিয়ে যান" : stage === "google" ? "Google দিয়ে যাচাই করুন" : "নতুন পাসওয়ার্ড সংরক্ষণ করুন";
     setMessage("");
   }
   function hideRecovery() {
@@ -145,37 +148,67 @@
   }
   recoveryLink.addEventListener("click", () => showRecovery("request"));
   document.getElementById("recovery-cancel").addEventListener("click", hideRecovery);
+
+  async function verifyGoogleRecovery(user) {
+    if (recoveryOAuthHandled) return;
+    recoveryOAuthHandled = true;
+    try {
+      const saved = sessionStorage.getItem(recoverySessionKey);
+      const details = saved ? JSON.parse(saved) : null;
+      if (!details?.email || !details?.phone) throw new Error("পুনরুদ্ধারের তথ্য পাওয়া যায়নি। আবার শুরু করুন।");
+      recoveryEmail = details.email;
+      recoveryPhone = details.phone;
+      const googleEmail = String(user?.email || "").trim().toLowerCase();
+      if (!googleEmail || googleEmail !== recoveryEmail) throw new Error("Google-এ নির্বাচিত Gmail নিবন্ধিত Gmail-এর সঙ্গে মিলছে না।");
+      const { data: profile, error } = await client.from("profiles").select("phone").eq("id", user.id).maybeSingle();
+      if (error || !profile || String(profile.phone || "").replace(/[\\s-]/g, "") !== recoveryPhone) {
+        throw new Error("Google অ্যাকাউন্ট ও নিবন্ধিত মোবাইল নম্বরের মিল পাওয়া যায়নি।");
+      }
+      recoveryUser = user;
+      sessionStorage.removeItem(recoverySessionKey);
+      showRecovery("password");
+      setMessage("Google পরিচয় ও মোবাইল নম্বর যাচাই সফল। এখন নতুন পাসওয়ার্ড দিন।", "success");
+    } catch (error) {
+      sessionStorage.removeItem(recoverySessionKey);
+      await client.auth.signOut();
+      recoveryPanel.hidden = false;
+      form.hidden = true;
+      recoveryLink.hidden = true;
+      setMessage(error.message || "পরিচয় যাচাই করা যায়নি।", "error");
+      showRecovery("request");
+      setMessage(error.message || "পরিচয় যাচাই করা যায়নি।", "error");
+    }
+  }
+
   recoverySubmit.addEventListener("click", async () => {
     recoverySubmit.disabled = true;
     try {
       if (recoveryStage === "request") {
         recoveryEmail = document.getElementById("recovery-email").value.trim().toLowerCase();
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recoveryEmail)) throw new Error("সঠিক ইমেইল ঠিকানা লিখুন।");
-        const { error } = await client.auth.resetPasswordForEmail(recoveryEmail);
+        recoveryPhone = document.getElementById("recovery-phone").value.trim().replace(/[\\s-]/g, "");
+        if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(recoveryEmail)) throw new Error("সঠিক Gmail ঠিকানা লিখুন।");
+        if (!/^01[3-9][0-9]{8}$/.test(recoveryPhone)) throw new Error("সঠিক ১১ সংখ্যার বাংলাদেশি মোবাইল নম্বর লিখুন।");
+        sessionStorage.setItem(recoverySessionKey, JSON.stringify({ email: recoveryEmail, phone: recoveryPhone }));
+        showRecovery("google");
+        setMessage("তথ্য নেওয়া হয়েছে। এবার Google দিয়ে পরিচয় যাচাই করুন।", "success");
+      } else if (recoveryStage === "google") {
+        const { error } = await client.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo: window.location.origin + "/auth.html?recover=google",
+            queryParams: { prompt: "select_account" }
+          }
+        });
         if (error) throw error;
-        showRecovery("otp");
-        setMessage("যদি এই ইমেইলে অ্যাকাউন্ট থাকে, তাহলে ৬ সংখ্যার কোড পাঠানো হয়েছে। ইনবক্স ও স্প্যাম ফোল্ডার দেখুন।", "success");
-      } else if (recoveryStage === "otp") {
-        const token = document.getElementById("recovery-otp").value.trim();
-        if (!/^\d{6}$/.test(token)) throw new Error("ইমেইলে পাওয়া ৬ সংখ্যার কোডটি লিখুন।");
-        const { data, error } = await client.auth.verifyOtp({ email: recoveryEmail, token, type: "recovery" });
-        if (error) throw error;
-        recoveryUser = data.user || data.session?.user || null;
-        if (!recoveryUser) throw new Error("যাচাইকরণ সেশন পাওয়া যায়নি। আবার কোড নিন।");
-        showRecovery("password");
-        setMessage("ইমেইল যাচাই সফল হয়েছে। এখন নতুন পাসওয়ার্ড দিন।", "success");
       } else {
-        if (!recoveryUser) throw new Error("যাচাইকরণ সেশন পাওয়া যায়নি। নতুন করে কোড নিন।");
-        const phoneValue = document.getElementById("recovery-phone").value.trim().replace(/[\s-]/g, "");
-        if (!/^01[3-9][0-9]{8}$/.test(phoneValue)) throw new Error("সঠিক ১১ সংখ্যার মোবাইল নম্বর লিখুন।");
-        const { data: profile, error: profileError } = await client.from("profiles").select("phone").eq("id", recoveryUser.id).single();
-        if (profileError || !profile || String(profile.phone || "").replace(/[\s-]/g, "") !== phoneValue) throw new Error("ইমেইল ও নিবন্ধিত মোবাইল নম্বরের মিল পাওয়া যায়নি।");
+        if (!recoveryUser) throw new Error("Google পরিচয় যাচাই করা হয়নি। আবার শুরু করুন।");
         const newPassword = document.getElementById("new-password").value;
         const confirmNew = document.getElementById("new-password-confirm").value;
         if (newPassword.length < 8) throw new Error("নতুন পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে।");
         if (newPassword !== confirmNew) throw new Error("দুটি নতুন পাসওয়ার্ড মিলছে না।");
         const { error } = await client.auth.updateUser({ password: newPassword });
         if (error) throw error;
+        sessionStorage.removeItem(recoverySessionKey);
         await client.auth.signOut();
         recoveryPanel.hidden = true;
         form.hidden = false;
@@ -190,27 +223,28 @@
       recoverySubmit.disabled = false;
     }
   });
+
   client.auth.onAuthStateChange((event, session) => {
-    if (event === "PASSWORD_RECOVERY" && session?.user) {
-      recoveryFlowDetected = true;
-      recoveryUser = session.user;
+    if (new URLSearchParams(window.location.search).get("recover") === "google" &&
+        session?.user && ["SIGNED_IN", "INITIAL_SESSION"].includes(event)) {
+      verifyGoogleRecovery(session.user);
     }
   });
   client.auth.getSession().then(({ data, error }) => {
     if (error) {
-      setMessage("সেশন যাচাই করা যায়নি। রিসেট লিংকটি নতুন করে খুলুন।", "error");
+      setMessage("সেশন যাচাই করা যায়নি। আবার চেষ্টা করুন।", "error");
       return;
     }
-
-    // The recovery callback can be a PKCE ?code=... URL. Do not send a
-    // recovery session to dashboard.html just because the URL has no hash.
-    if (data.session && (recoveryFlowDetected || hasRecoveryCallback)) {
-      recoveryUser = data.session.user;
-      showRecovery("password");
-    } else if (data.session && !hasRecoveryCallback) {
+    if (new URLSearchParams(window.location.search).get("recover") === "google") {
+      if (data.session?.user) verifyGoogleRecovery(data.session.user);
+      else {
+        recoveryLink.hidden = true;
+        showRecovery("request");
+        setMessage("Google যাচাই শেষ হয়নি। আবার শুরু করুন।", "error");
+      }
+    } else if (data.session) {
       window.location.href = "dashboard.html";
     }
-    // If a PKCE code is still being exchanged, wait for PASSWORD_RECOVERY.
   });
   loginTab.addEventListener("click", () => setMode("login"));
   signupTab.addEventListener("click", () => setMode("signup"));
