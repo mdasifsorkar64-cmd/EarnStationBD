@@ -22,7 +22,7 @@ Preview environment-এর জন্য যাচাই করুন:
 
 Supabase Dashboard → EarnStationBD-Test project → Authentication → Settings → Password Security
 
-সেখানে “Leaked password protection” / “Prevent use of compromised passwords” অপশনটি চালু করুন, যদি আপনার project plan-এ এটি উপলব্ধ থাকে।
+সেখানে “Leaked password protection” / “Prevent use of compromised passwords” অপশনটি চালু করুন। Supabase-এর বর্তমান ডকুমেন্টেশন অনুযায়ী এই সুবিধা Pro Plan ও তার উপরের প্ল্যানে পাওয়া যায়; আপনার প্ল্যানে অপশনটি না থাকলে সেটি Dashboard থেকে চালু করা যাবে না।
 
 এতে পরিচিত compromised password ব্যবহার করে নতুন পাসওয়ার্ড সেট করার ঝুঁকি কমে।
 
