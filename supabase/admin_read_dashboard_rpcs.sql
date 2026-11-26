@@ -76,3 +76,18 @@ grant execute on function public.admin_get_referral_settings() to authenticated;
 grant execute on function public.admin_get_site_settings() to authenticated;
 grant execute on function public.admin_get_community_links() to authenticated;
 grant execute on function public.admin_get_audit_log() to authenticated;
+
+create or replace function public.admin_list_owner_withdrawals()
+returns table(id uuid,amount numeric,payout_method text,payment_transaction_id text,note text,created_at timestamptz)
+language plpgsql security definer set search_path=public as $$
+begin
+ if not public.is_admin() then raise exception 'Admin access required' using errcode='42501'; end if;
+ return query
+ select w.id,w.amount,w.payout_method,w.payment_transaction_id,w.note,w.created_at
+ from public.owner_wallet_withdrawals w
+ order by w.created_at desc
+ limit 100;
+end;
+$$;
+revoke all on function public.admin_list_owner_withdrawals() from public,anon;
+grant execute on function public.admin_list_owner_withdrawals() to authenticated;
