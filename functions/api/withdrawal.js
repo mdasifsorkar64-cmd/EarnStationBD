@@ -1,3 +1,5 @@
+import { encryptPayoutAccount } from "../_shared/payout-crypto.js";
+
 const allowedOrigin = (origin) => {
   if (!origin) return null;
   try {
@@ -21,34 +23,6 @@ function response(request, status, payload) {
     headers["Access-Control-Allow-Methods"] = "POST, OPTIONS";
   }
   return new Response(payload === null ? null : JSON.stringify(payload), { status, headers });
-}
-
-function base64(bytes) {
-  let binary = "";
-  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-  return btoa(binary);
-}
-
-function decodeBase64(value) {
-  const binary = atob(value);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return bytes;
-}
-
-async function encryptPayoutAccount(account, encodedKey) {
-  const rawKey = decodeBase64(encodedKey || "");
-  if (rawKey.length !== 32) throw new Error("সার্ভারের এনক্রিপশন কনফিগারেশন সঠিক নয়।");
-  const key = await crypto.subtle.importKey("raw", rawKey, { name: "AES-GCM" }, false, ["encrypt"]);
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const encrypted = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv, tagLength: 128 }, key, new TextEncoder().encode(account)));
-  const tag = encrypted.slice(encrypted.length - 16);
-  const ciphertext = encrypted.slice(0, encrypted.length - 16);
-  const packed = new Uint8Array(iv.length + tag.length + ciphertext.length);
-  packed.set(iv, 0);
-  packed.set(tag, iv.length);
-  packed.set(ciphertext, iv.length + tag.length);
-  return "v1." + base64(packed);
 }
 
 export async function onRequest({ request, env }) {
