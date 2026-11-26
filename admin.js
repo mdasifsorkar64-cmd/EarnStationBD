@@ -123,27 +123,38 @@
     catch(e){$("referral-settings-status").textContent=e.message||"রেফারেল বোনাস সংরক্ষণ হয়নি।";message(e.message||"রেফারেল বোনাস সংরক্ষণ হয়নি।",true);}
     finally{$("save-referral-settings").disabled=false;}
   });
+  async function loadAdminRecoveryStatus(){
+    const status=$("admin-recovery-status");
+    const {data,error}=await client.rpc("admin_get_backup_admin_status");
+    if(error)throw error;
+    const row=Array.isArray(data)?data[0]:data;
+    if(!row)throw new Error("Backup Admin-এর অবস্থা পাওয়া যায়নি।");
+    const state=!row.registered?"এখনো নিবন্ধন করেনি":!row.email_confirmed?"ইমেইল যাচাই বাকি":row.profile_role==="admin"&&row.account_status==="active"?"সক্রিয় Backup Admin":row.account_status==="suspended"?"অ্যাকাউন্ট Suspended — Primary Admin সক্রিয় করতে পারবেন":"নিবন্ধিত; Primary Admin সক্রিয় করতে পারবেন";
+    status.textContent="Backup: "+row.backup_email+" · "+state;
+    $("activate-backup-admin").disabled=!row.can_activate||!row.email_confirmed||row.profile_role==="admin"&&row.account_status==="active";
+    $("recover-primary-admin").disabled=!row.can_recover_primary;
+  }
   $("activate-backup-admin").addEventListener("click",async()=>{
-    if(!confirm("শুধু mdasifsorkar1414@gmail.com-কে Backup Admin হিসেবে চালু করবেন? আগে ওই Gmail দিয়ে নিবন্ধন ও ইমেইল যাচাই সম্পন্ন থাকতে হবে।"))return;
+    if(!confirm("শুধু mdasifsorkar1414@gmail.com-কে Backup Admin হিসেবে সক্রিয় করবেন?"))return;
     const b=$("activate-backup-admin"),status=$("admin-recovery-status");b.disabled=true;status.textContent="Backup Admin যাচাই ও সক্রিয় করা হচ্ছে...";
     try{
-      const {error}=await client.rpc("admin_promote_backup_admin");
+      const {error}=await client.rpc("admin_activate_backup_admin");
       if(error)throw error;
-      status.textContent="Backup Admin সফলভাবে সক্রিয় হয়েছে।";
+      await loadAdminRecoveryStatus();
       message("নির্ধারিত Backup Admin সক্রিয় হয়েছে।");
     }catch(e){status.textContent=e.message||"Backup Admin সক্রিয় করা যায়নি।";message(status.textContent,true);}
-    finally{b.disabled=false;}
+    finally{await loadAdminRecoveryStatus().catch(()=>{});}
   });
   $("recover-primary-admin").addEventListener("click",async()=>{
     if(!confirm("Primary Admin mdasifsorkar64@gmail.com-এর Admin ভূমিকা ও অ্যাকাউন্ট অবস্থা Active করবেন?"))return;
     const b=$("recover-primary-admin"),status=$("admin-recovery-status");b.disabled=true;status.textContent="Primary Admin পুনরুদ্ধার করা হচ্ছে...";
     try{
-      const {error}=await client.rpc("backup_admin_recover_primary");
+      const {error}=await client.rpc("admin_recover_primary_admin");
       if(error)throw error;
       status.textContent="Primary Admin পুনরুদ্ধার হয়েছে। Primary Admin-কে নতুন করে লগইন করতে হবে।";
       message("Primary Admin পুনরুদ্ধার হয়েছে।");
     }catch(e){status.textContent=e.message||"Primary Admin পুনরুদ্ধার করা যায়নি।";message(status.textContent,true);}
-    finally{b.disabled=false;}
+    finally{await loadAdminRecoveryStatus().catch(()=>{});}
   });
     async function loadMembers(){
     $("members-list").textContent="সদস্য তালিকা লোড হচ্ছে...";
@@ -319,7 +330,7 @@ async function loadOffers(){
   }catch(e){$("site-status").textContent=e.message||"সংরক্ষণ করা যায়নি।";message(e.message||"সংরক্ষণ করা যায়নি।",true);}finally{$("save-site").disabled=false;}});
   $("refresh-site").addEventListener("click",()=>loadSiteSettings().catch(e=>message(e.message,true)));
 
-  async function refreshAll(){try{await Promise.all([loadMembers(),loadOffers(),loadConversions(),loadWithdrawals(),loadOwnerWallet(),loadSettings(),loadSiteSettings(),loadReferralSettings()]);message("সব তথ্য আপডেট হয়েছে।");}catch(e){message(e.message||"তথ্য লোড করা যায়নি।",true);}}
+  async function refreshAll(){try{await Promise.all([loadMembers(),loadOffers(),loadConversions(),loadWithdrawals(),loadOwnerWallet(),loadSettings(),loadSiteSettings(),loadReferralSettings(),loadAdminRecoveryStatus()]);message("সব তথ্য আপডেট হয়েছে।");}catch(e){message(e.message||"তথ্য লোড করা যায়নি।",true);}}
   $("refresh-all").addEventListener("click",refreshAll);
   (async()=>{try{const {data,error}=await client.auth.getSession();if(error)throw error;if(!data.session){location.replace("auth.html");return;}const {data:profile,error:pe}=await client.from("profiles").select("role,account_status").eq("id",data.session.user.id).single();if(pe)throw pe;if(profile?.role!=="admin"||profile?.account_status!=="active"){location.replace("dashboard.html");return;}
     $("admin-top").hidden=false;$("admin-content").hidden=false;$("admin-footer").hidden=false;message("অ্যাডমিন যাচাই সফল।");await refreshAll();
