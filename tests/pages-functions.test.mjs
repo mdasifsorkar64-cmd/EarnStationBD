@@ -1,4 +1,8 @@
 import test from "node:test";
+import { webcrypto } from "node:crypto";
+import { encryptPayoutAccount, decryptPayoutAccount } from "../functions/_shared/payout-crypto.js";
+
+globalThis.crypto ??= webcrypto;
 import assert from "node:assert/strict";
 import { onRequest as memberWithdrawal } from "../functions/api/withdrawal.js";
 import { onRequest as adminWithdrawals } from "../functions/api/admin/withdrawals.js";
@@ -39,4 +43,22 @@ test("both Pages routes answer preflight without accessing Supabase", async () =
   const admin = await adminWithdrawals({ request: request("https://example.test/api/admin/withdrawals", "OPTIONS"), env: {} });
   assert.equal(member.status, 204);
   assert.equal(admin.status, 204);
+});
+
+
+test("payout account encryption round-trips without exposing plaintext", async () => {
+  const key = Buffer.from(webcrypto.getRandomValues(new Uint8Array(32))).toString("base64");
+  const encrypted = await encryptPayoutAccount("01712345678", key);
+  assert.match(encrypted, /^v1\./);
+  assert.equal(encrypted.includes("01712345678"), false);
+  assert.equal(await decryptPayoutAccount(encrypted, key), "01712345678");
+});
+
+test("payout account encryption rejects a tampered ciphertext", async () => {
+  const key = Buffer.from(webcrypto.getRandomValues(new Uint8Array(32))).toString("base64");
+  const encrypted = await encryptPayoutAccount("01712345678", key);
+  const [version, payload] = encrypted.split(".");
+  const bytes = Buffer.from(payload, "base64");
+  bytes[bytes.length - 1] ^= 1;
+  await assert.rejects(() => decryptPayoutAccount(version + "." + bytes.toString("base64"), key));
 });
