@@ -47,6 +47,7 @@ export async function onRequest({ request, env }) {
   const apiKey = env.SUPABASE_PUBLISHABLE_KEY || env.SUPABASE_ANON_KEY;
   const encryptionKey = env.PAYOUT_ENCRYPTION_KEY;
   if (!base || !apiKey || !encryptionKey) return reply(request, 503, { error: "সার্ভারের নিরাপদ কনফিগারেশন এখনো সম্পূর্ণ নয়।" });
+  try { const parsed = new URL(base); if (parsed.protocol !== "https:" || !parsed.hostname.endsWith(".supabase.co")) throw new Error(); } catch { return reply(request, 503, { error: "Supabase URL কনফিগারেশন সঠিক নয়।" }); }\n
 
   try {
     await requireAdmin(base, apiKey, authorization);
