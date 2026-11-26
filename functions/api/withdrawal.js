@@ -85,9 +85,11 @@ export async function onRequest({ request, env }) {
       } catch {}
       return response(request, result.status === 401 ? 401 : 400, { error: message });
     }
+    let requestId = raw;
+    try { requestId = JSON.parse(raw); } catch {}
     return response(request, 200, {
       success: true,
-      request_id: raw,
+      request_id: requestId,
       message: "উত্তোলনের অনুরোধ জমা হয়েছে। সর্বোচ্চ ৫ ঘণ্টার মধ্যে পেমেন্ট সম্পন্ন করা হবে।"
     });
   } catch (error) {
