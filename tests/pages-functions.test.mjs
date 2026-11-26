@@ -218,3 +218,16 @@ test("admin withdrawal rejects oversized review bodies", async () => {
     globalThis.fetch = originalFetch;
   }
 });
+
+
+test("member withdrawal fails closed when payout encryption key is malformed", async () => {
+  const req = request("https://earnstationbd.example/api/withdrawal", "POST", {
+    Origin: "https://earnstationbd.example",
+    Authorization: "Bearer invalid-session"
+  }, JSON.stringify({ method: "bkash", account: "01712345678", amount: 150 }));
+  const res = await memberWithdrawal({
+    request: req,
+    env: { SUPABASE_URL: "https://test.supabase.co", SUPABASE_PUBLISHABLE_KEY: "public-key", PAYOUT_ENCRYPTION_KEY: "not-a-valid-32-byte-key" }
+  });
+  assert.equal(res.status, 503);
+});
