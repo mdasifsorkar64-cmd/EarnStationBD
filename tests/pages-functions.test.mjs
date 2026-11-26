@@ -62,3 +62,21 @@ test("payout account encryption rejects a tampered ciphertext", async () => {
   bytes[bytes.length - 1] ^= 1;
   await assert.rejects(() => decryptPayoutAccount(version + "." + bytes.toString("base64"), key));
 });
+
+test("member withdrawal route accepts its own HTTPS custom domain origin", async () => {
+  const req = request("https://earnstationbd.example/api/withdrawal", "POST", {
+    Origin: "https://earnstationbd.example",
+    Authorization: "Bearer test"
+  });
+  const res = await memberWithdrawal({ request: req, env: {} });
+  assert.equal(res.status, 503);
+});
+
+test("admin withdrawal route accepts its own HTTPS custom domain origin", async () => {
+  const req = request("https://earnstationbd.example/api/admin/withdrawals", "GET", {
+    Origin: "https://earnstationbd.example",
+    Authorization: "Bearer test"
+  });
+  const res = await adminWithdrawals({ request: req, env: {} });
+  assert.equal(res.status, 503);
+});
