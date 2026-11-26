@@ -186,7 +186,9 @@ async function loadOffers(){
   async function loadCommunitySettings(){
     $("community-status").textContent="কমিউনিটি লিংক লোড হচ্ছে...";
     const {data,error}=await client.rpc("admin_get_community_links"); if(error)throw error;
-    $("community-facebook").value=data.facebook_url||""; $("community-telegram").value=data.telegram_url||""; $("community-whatsapp").value=data.whatsapp_url||""; $("community-youtube").value=data.youtube_url||"";
+    const row=Array.isArray(data)?data[0]:data;
+    if(!row)throw new Error("কমিউনিটি লিংক পাওয়া যায়নি।");
+    $("community-facebook").value=row.facebook_url||""; $("community-telegram").value=row.telegram_url||""; $("community-whatsapp").value=row.whatsapp_url||""; $("community-youtube").value=row.youtube_url||"";
     $("community-status").textContent="কমিউনিটি লিংক লোড হয়েছে।";
   }
   $("community-form").addEventListener("submit",async event=>{
@@ -204,7 +206,9 @@ async function loadOffers(){
   async function loadSiteSettings(){
     $("site-status").textContent="সেটিংস লোড হচ্ছে...";
     const {data,error}=await client.rpc("admin_get_site_settings");if(error)throw error;
-    $("site-name").value=data.site_name||"EarnStationBD";$("site-tagline").value=data.site_tagline||"";$("site-announcement").value=data.announcement||"";$("site-contact").value=data.contact_email||"";
+    const row=Array.isArray(data)?data[0]:data;
+    if(!row)throw new Error("ওয়েবসাইট সেটিংস পাওয়া যায়নি।");
+    $("site-name").value=row.site_name||"EarnStationBD";$("site-tagline").value=row.site_tagline||"";$("site-announcement").value=row.announcement||"";$("site-contact").value=row.contact_email||"";
     $("site-status").textContent="ওয়েবসাইট সেটিংস লোড হয়েছে।";
     await loadCommunitySettings();
     const audit=await client.rpc("admin_get_audit_log");if(audit.error)throw audit.error;
