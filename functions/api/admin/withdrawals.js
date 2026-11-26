@@ -4,7 +4,9 @@ const allowedOrigin = (origin, requestUrl) => {
   if (!origin) return null;
   try {
     const url = new URL(origin);
-    if (url.protocol === "https:" && (url.hostname === "earnstationbd.pages.dev" || url.hostname.endsWith(".earnstationbd.pages.dev"))) return origin;
+    if (url.protocol !== "https:") return null;
+    if (requestUrl && url.origin === new URL(requestUrl).origin) return origin;
+    if (url.hostname === "earnstationbd.pages.dev" || url.hostname.endsWith(".earnstationbd.pages.dev")) return origin;
     return null;
   } catch { return null; }
 };
