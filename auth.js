@@ -161,7 +161,7 @@
       const googleEmail = String(user?.email || "").trim().toLowerCase();
       if (!googleEmail || googleEmail !== recoveryEmail) throw new Error("Google-এ নির্বাচিত Gmail নিবন্ধিত Gmail-এর সঙ্গে মিলছে না।");
       const { data: profile, error } = await client.from("profiles").select("phone").eq("id", user.id).maybeSingle();
-      if (error || !profile || String(profile.phone || "").replace(/[\\s-]/g, "") !== recoveryPhone) {
+      if (error || !profile || String(profile.phone || "").replace(/[\s-]/g, "") !== recoveryPhone) {
         throw new Error("Google অ্যাকাউন্ট ও নিবন্ধিত মোবাইল নম্বরের মিল পাওয়া যায়নি।");
       }
       recoveryUser = user;
@@ -185,8 +185,8 @@
     try {
       if (recoveryStage === "request") {
         recoveryEmail = document.getElementById("recovery-email").value.trim().toLowerCase();
-        recoveryPhone = document.getElementById("recovery-phone").value.trim().replace(/[\\s-]/g, "");
-        if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(recoveryEmail)) throw new Error("সঠিক Gmail ঠিকানা লিখুন।");
+        recoveryPhone = document.getElementById("recovery-phone").value.trim().replace(/[\s-]/g, "");
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recoveryEmail)) throw new Error("সঠিক Gmail ঠিকানা লিখুন।");
         if (!/^01[3-9][0-9]{8}$/.test(recoveryPhone)) throw new Error("সঠিক ১১ সংখ্যার বাংলাদেশি মোবাইল নম্বর লিখুন।");
         sessionStorage.setItem(recoverySessionKey, JSON.stringify({ email: recoveryEmail, phone: recoveryPhone }));
         showRecovery("google");
