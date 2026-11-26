@@ -1,3 +1,5 @@
+import { decryptPayoutAccount } from "../../_shared/payout-crypto.js";
+
 const allowedOrigin = (origin) => {
   if (!origin) return null;
   try {
@@ -16,31 +18,6 @@ function reply(request, status, payload) {
     headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS";
   }
   return new Response(payload === null ? null : JSON.stringify(payload), { status, headers });
-}
-
-function fromBase64(value) {
-  const binary = atob(value);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return bytes;
-}
-
-async function decryptPayoutAccount(value, encodedKey) {
-  const [version, encoded] = String(value || "").split(".");
-  if (version !== "v1" || !encoded) throw new Error("উত্তোলনের গোপন তথ্য পড়া যায়নি।");
-  const packed = fromBase64(encoded);
-  if (packed.length < 29) throw new Error("উত্তোলনের গোপন তথ্য সঠিক নয়।");
-  const rawKey = fromBase64(encodedKey || "");
-  if (rawKey.length !== 32) throw new Error("সার্ভারের এনক্রিপশন কনফিগারেশন সঠিক নয়।");
-  const key = await crypto.subtle.importKey("raw", rawKey, { name: "AES-GCM" }, false, ["decrypt"]);
-  const iv = packed.slice(0, 12);
-  const tag = packed.slice(12, 28);
-  const ciphertext = packed.slice(28);
-  const combined = new Uint8Array(ciphertext.length + tag.length);
-  combined.set(ciphertext, 0);
-  combined.set(tag, ciphertext.length);
-  const clear = await crypto.subtle.decrypt({ name: "AES-GCM", iv, tagLength: 128 }, key, combined);
-  return new TextDecoder().decode(clear);
 }
 
 async function requireAdmin(base, apiKey, authorization) {
