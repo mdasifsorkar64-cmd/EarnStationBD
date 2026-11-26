@@ -59,9 +59,9 @@ export async function onRequest({ request, env }) {
   if (origin && !allowedOrigin(origin)) return response(request, 403, { error: "এই ওয়েবসাইট থেকে অনুরোধ অনুমোদিত নয়।" });
 
   const authorization = request.headers.get("Authorization") || "";
-  if (!/^Bearer\\s+\\S+$/i.test(authorization)) return response(request, 401, { error: "আবার লগইন করুন।" });
+  if (!/^Bearer\s+\S+$/i.test(authorization)) return response(request, 401, { error: "আবার লগইন করুন।" });
 
-  const supabaseUrl = String(env.SUPABASE_URL || "").replace(/\\/$/, "");
+  const supabaseUrl = String(env.SUPABASE_URL || "").replace(/\/$/, "");
   const supabaseKey = env.SUPABASE_PUBLISHABLE_KEY || env.SUPABASE_ANON_KEY;
   const encryptionKey = env.PAYOUT_ENCRYPTION_KEY;
   if (!supabaseUrl || !supabaseKey || !encryptionKey) return response(request, 503, { error: "সার্ভারের নিরাপদ কনফিগারেশন এখনো সম্পূর্ণ নয়।" });
@@ -75,10 +75,10 @@ export async function onRequest({ request, env }) {
   }
 
   const method = input.method;
-  const account = String(input.account || "").replace(/\\D/g, "");
+  const account = String(input.account || "").replace(/\D/g, "");
   const amount = Number(input.amount);
   if (!["bkash", "nagad"].includes(method)) return response(request, 400, { error: "বিকাশ অথবা নগদ নির্বাচন করুন।" });
-  if (!/^01[3-9]\\d{8}$/.test(account)) return response(request, 400, { error: "সঠিক ১১ সংখ্যার বাংলাদেশি মোবাইল নম্বর লিখুন।" });
+  if (!/^01[3-9]\d{8}$/.test(account)) return response(request, 400, { error: "সঠিক ১১ সংখ্যার বাংলাদেশি মোবাইল নম্বর লিখুন।" });
   if (!Number.isFinite(amount) || amount <= 0 || Math.round(amount * 100) !== amount * 100) {
     return response(request, 400, { error: "সঠিক উত্তোলনের পরিমাণ লিখুন।" });
   }
