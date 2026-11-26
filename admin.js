@@ -172,10 +172,42 @@ async function loadOffers(){
       const actions=el("div","admin-row-actions");if(item.status==="pending"){actions.append(button("অনুমোদন",()=>reviewConversion(item.id,"approved"),"active"),button("বাতিল",()=>reviewConversion(item.id,"rejected"),"rejected"));}row.append(actions);root.append(row);});
   }
   async function reviewConversion(id,decision){if(!confirm(decision==="approved"?"যাচাইকৃত কনভার্সন অনুমোদন করবেন? কমিশন একবার লেজারে যোগ হবে।":"এই কনভার্সন বাতিল করবেন?"))return;message("কনভার্সন পর্যালোচনা হচ্ছে...");const {error}=await client.rpc("admin_review_conversion",{p_conversion_id:id,p_decision:decision,p_note:""});if(error)throw error;message("কনভার্সন পর্যালোচনা সম্পন্ন।");await loadConversions();}
+  async function loadWithdrawalControl(){
+    const status=$("withdrawal-control-status");
+    status.textContent="উত্তোলন নিয়ন্ত্রণ লোড হচ্ছে...";
+    const {data,error}=await client.rpc("admin_get_withdrawal_control");
+    if(error)throw error;
+    const row=Array.isArray(data)?data[0]:data;
+    if(!row)throw new Error("উত্তোলন নিয়ন্ত্রণের তথ্য পাওয়া যায়নি।");
+    $("withdrawals-enabled").checked=!!row.withdrawals_enabled;
+    status.textContent=row.withdrawals_enabled
+      ?"অবস্থা: চালু — নতুন উত্তোলনের আবেদন গ্রহণের অনুমতি আছে।"
+      :"অবস্থা: বন্ধ — নতুন উত্তোলনের আবেদন গ্রহণ করা হবে না।";
+  }
+  $("withdrawal-control-form").addEventListener("submit",async event=>{
+    event.preventDefault();
+    const enabled=$("withdrawals-enabled").checked;
+    const promptText=enabled
+      ?"সদস্যদের নতুন উত্তোলনের আবেদন গ্রহণ চালু করবেন? মনে রাখবেন, পেমেন্ট পাঠানোর ব্যবস্থা আলাদাভাবে চালু থাকতে হবে।"
+      :"সদস্যদের নতুন উত্তোলনের আবেদন বন্ধ করবেন? আগে জমা থাকা আবেদন অপরিবর্তিত থাকবে।";
+    if(!confirm(promptText))return;
+    $("save-withdrawal-control").disabled=true;
+    try{
+      const {error}=await client.rpc("admin_set_withdrawals_enabled",{p_enabled:enabled});
+      if(error)throw error;
+      await loadWithdrawalControl();
+      message(enabled?"নতুন উত্তোলনের আবেদন গ্রহণ চালু হয়েছে।":"নতুন উত্তোলনের আবেদন গ্রহণ বন্ধ হয়েছে।");
+    }catch(e){
+      $("withdrawal-control-status").textContent=e.message||"উত্তোলন নিয়ন্ত্রণ সংরক্ষণ করা যায়নি।";
+      message(e.message||"উত্তোলন নিয়ন্ত্রণ সংরক্ষণ করা যায়নি।",true);
+      await loadWithdrawalControl().catch(()=>{});
+    }finally{$("save-withdrawal-control").disabled=false;}
+  });
   async function loadWithdrawals(){
+    await loadWithdrawalControl();
     const root=$("withdrawals-list");
     root.replaceChildren();
-    root.textContent="উত্তোলনের তালিকা সাময়িকভাবে বন্ধ আছে। নিরাপদ অনলাইন পেমেন্ট API এখনো যুক্ত হয়নি।";
+    root.textContent="উত্তোলনের তালিকা ও পেমেন্ট প্রক্রিয়াকরণ সাময়িকভাবে বন্ধ আছে। নিরাপদ অনলাইন পেমেন্ট API এখনো যুক্ত হয়নি।";
     $("stat-withdrawals").textContent="—";
   }
   $("offer-form").addEventListener("submit",async event=>{event.preventDefault();const form=event.currentTarget,data=Object.fromEntries(new FormData(form).entries());try{const url=new URL(data.destination_url);if(!["https:","http:"].includes(url.protocol))throw new Error("শুধু HTTP/HTTPS লিংক ব্যবহার করুন।");$("offer-submit").disabled=true;message("অফার সংরক্ষণ হচ্ছে...");const {error}=await client.from("offers").insert({...data,status:"pending"});if(error)throw error;form.reset();message("অফার সংরক্ষিত হয়েছে। Pending অবস্থায় রাখা হয়েছে।");await loadOffers();}catch(e){message(e.message||"অফার সংরক্ষণ করা যায়নি।",true);}finally{$("offer-submit").disabled=false;}});
