@@ -76,3 +76,19 @@ join pg_namespace n on n.oid = c.relnamespace
 where n.nspname = 'public'
   and c.relkind = 'v'
 order by c.relname;
+
+
+-- 6) Admin SECURITY DEFINER functions: confirm each body invokes the central active-admin guard.
+select
+  p.proname as function_name,
+  pg_get_function_identity_arguments(p.oid) as arguments,
+  position('is_admin' in lower(pg_get_functiondef(p.oid))) > 0 as body_references_admin_guard,
+  coalesce(array_to_string(p.proconfig, ', '), '(not set)') as function_settings,
+  has_function_privilege('anon', p.oid, 'EXECUTE') as anon_can_execute,
+  has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated_can_execute
+from pg_proc p
+join pg_namespace n on n.oid = p.pronamespace
+where n.nspname = 'public'
+  and p.prosecdef
+  and p.proname like 'admin_%'
+order by p.proname;
