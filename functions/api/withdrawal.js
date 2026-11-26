@@ -43,8 +43,9 @@ export async function onRequest({ request, env }) {
 
   let input;
   try {
-    if (Number(request.headers.get("Content-Length") || 0) > 4096) return response(request, 413, { error: "অনুরোধটি অনেক বড়।" });
-    input = await request.json();
+    const raw = await request.text();
+    if (raw.length > 4096) return response(request, 413, { error: "অনুরোধটি অনেক বড়।" });
+    input = JSON.parse(raw);
   } catch {
     return response(request, 400, { error: "সঠিক তথ্য পাঠান।" });
   }
