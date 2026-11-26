@@ -152,7 +152,34 @@
     });
   }
 
-async function loadOffers(){
+async function loadBackupAdminPanel(){
+    const status=$("backup-admin-status"),activate=$("activate-backup-admin"),recover=$("recover-primary-admin");
+    activate.hidden=true;recover.hidden=true;status.textContent="Backup Admin-এর অবস্থা যাচাই হচ্ছে...";
+    const {data,error}=await client.rpc("admin_get_backup_admin_status");if(error)throw error;
+    const row=Array.isArray(data)?data[0]:data;if(!row)throw new Error("Backup Admin-এর অবস্থা পাওয়া যায়নি।");
+    if(!row.registered)status.textContent="এই Gmail দিয়ে এখনো Test Auth-এ নিবন্ধন করা হয়নি। আগে mdasifsorkar1414@gmail.com দিয়ে সদস্য হিসেবে নিবন্ধন ও ইমেইল যাচাই করুন।";
+    else if(!row.email_confirmed)status.textContent="Backup Gmail নিবন্ধিত, কিন্তু ইমেইল এখনো যাচাই হয়নি। আগে ইনবক্স থেকে ইমেইল নিশ্চিত করুন।";
+    else if(row.profile_role==="admin"&&row.account_status==="active")status.textContent="Backup Admin সক্রিয় আছে। Primary Admin-এর জরুরি পুনরুদ্ধার সুবিধা প্রস্তুত।";
+    else status.textContent="Backup Gmail যাচাইকৃত; এখনো Admin হিসেবে সক্রিয় নয়।";
+    activate.hidden=!row.can_activate||(row.profile_role==="admin"&&row.account_status==="active");
+    recover.hidden=!row.can_recover_primary;
+  }
+  $("activate-backup-admin").addEventListener("click",async()=>{
+    if(!confirm("mdasifsorkar1414@gmail.com-কে Backup Admin হিসেবে সক্রিয় করবেন? তিনি পূর্ণ Admin ক্ষমতা পাবেন।"))return;
+    $("activate-backup-admin").disabled=true;
+    try{const {error}=await client.rpc("admin_activate_backup_admin");if(error)throw error;message("Backup Admin সক্রিয় হয়েছে।");await loadBackupAdminPanel();}
+    catch(e){message(e.message||"Backup Admin সক্রিয় করা যায়নি।",true);await loadBackupAdminPanel().catch(()=>{});}
+    finally{$("activate-backup-admin").disabled=false;}
+  });
+  $("recover-primary-admin").addEventListener("click",async()=>{
+    if(!confirm("Primary Admin mdasifsorkar64@gmail.com-এর ভূমিকা Admin এবং অবস্থা Active করা হবে। এগিয়ে যাবেন?"))return;
+    $("recover-primary-admin").disabled=true;
+    try{const {error}=await client.rpc("admin_recover_primary_admin");if(error)throw error;message("Primary Admin পুনরুদ্ধার হয়েছে। এখন Primary Admin-কে নতুন করে লগইন করতে হবে।");await loadBackupAdminPanel();}
+    catch(e){message(e.message||"Primary Admin পুনরুদ্ধার করা যায়নি।",true);}
+    finally{$("recover-primary-admin").disabled=false;}
+  });
+
+  async function loadOffers(){
     $("offers-table").textContent="লোড হচ্ছে...";
     const {data,error}=await client.from("offers").select("id,title,partner_name,status,destination_url,created_at").order("created_at",{ascending:false}).limit(100);if(error)throw error;
     const root=$("offers-table");root.replaceChildren();$("stat-offers").textContent=data.length;
@@ -297,9 +324,9 @@ async function loadOffers(){
   }catch(e){$("site-status").textContent=e.message||"সংরক্ষণ করা যায়নি।";message(e.message||"সংরক্ষণ করা যায়নি।",true);}finally{$("save-site").disabled=false;}});
   $("refresh-site").addEventListener("click",()=>loadSiteSettings().catch(e=>message(e.message,true)));
 
-  async function refreshAll(){try{await Promise.all([loadMembers(),loadOffers(),loadConversions(),loadWithdrawals(),loadOwnerWallet(),loadSettings(),loadSiteSettings(),loadReferralSettings()]);message("সব তথ্য আপডেট হয়েছে।");}catch(e){message(e.message||"তথ্য লোড করা যায়নি।",true);}}
+  async function refreshAll(){try{await Promise.all([loadMembers(),loadBackupAdminPanel(),loadOffers(),loadConversions(),loadWithdrawals(),loadOwnerWallet(),loadSettings(),loadSiteSettings(),loadReferralSettings()]);message("সব তথ্য আপডেট হয়েছে।");}catch(e){message(e.message||"তথ্য লোড করা যায়নি।",true);}}
   $("refresh-all").addEventListener("click",refreshAll);
-  (async()=>{try{const {data,error}=await client.auth.getSession();if(error)throw error;if(!data.session){location.replace("auth.html");return;}const {data:profile,error:pe}=await client.from("profiles").select("role,account_status").eq("id",data.session.user.id).single();if(pe)throw pe;if(profile?.role!=="admin"||profile?.account_status!=="active"){location.replace("dashboard.html");return;}
+  (async()=>{try{const {data,error}=await client.auth.getSession();if(error)throw error;if(!data.session){location.replace("auth.html");return;}const {data:isAdmin,error:adminCheckError}=await client.rpc("is_admin");if(adminCheckError)throw adminCheckError;if(isAdmin!==true){location.replace("dashboard.html");return;}
     $("admin-top").hidden=false;$("admin-content").hidden=false;$("admin-footer").hidden=false;message("অ্যাডমিন যাচাই সফল।");await refreshAll();
   }catch(e){message(e.message||"অ্যাডমিন প্যানেল লোড করা যায়নি।",true);}})();
 })();
