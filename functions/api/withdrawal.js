@@ -60,12 +60,12 @@ export async function onRequest({ request, env }) {
   }
 
   try {
+    const ciphertext = await encryptPayoutAccount(account, encryptionKey);
     const userResponse = await fetch(supabaseUrl + "/auth/v1/user", {
       headers: { apikey: supabaseKey, Authorization: authorization }
     });
     if (!userResponse.ok) return response(request, 401, { error: "আবার লগইন করুন।" });
 
-    const ciphertext = await encryptPayoutAccount(account, encryptionKey);
     const result = await fetch(supabaseUrl + "/rest/v1/rpc/request_withdrawal", {
       method: "POST",
       headers: {
