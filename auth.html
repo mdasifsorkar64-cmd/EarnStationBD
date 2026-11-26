@@ -77,13 +77,13 @@
       <button type="button" id="forgot-password-link" class="auth-switch" style="display:block;margin-top:14px">পাসওয়ার্ড ভুলে গেছেন?</button>
       <section id="recovery-panel" hidden style="margin-top:18px;text-align:left">
         <h3 id="recovery-title">পাসওয়ার্ড পুনরুদ্ধার</h3>
-        <p id="recovery-help" class="field-hint">আপনার নিবন্ধিত ইমেইল দিন। পরিচয় যাচাইয়ের জন্য ইমেইলে নিরাপদ লিংক পাঠানো হবে।</p>
-        <div class="field-group" id="recovery-email-group"><label for="recovery-email">ইমেইল ঠিকানা</label><input id="recovery-email" type="email" autocomplete="email" required></div>
-        <div class="field-group" id="recovery-otp-group" hidden><label for="recovery-otp">৬ সংখ্যার ইমেইল কোড</label><input id="recovery-otp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="123456"></div>
-        <div class="field-group" id="recovery-phone-group" hidden><label for="recovery-phone">নিবন্ধিত মোবাইল নম্বর</label><input id="recovery-phone" type="tel" inputmode="numeric" maxlength="11" placeholder="01XXXXXXXXX"></div>
+        <p id="recovery-help" class="field-hint">আপনার নিবন্ধিত Gmail ও মোবাইল নম্বর লিখুন। Google দিয়ে পরিচয় যাচাই হবে।</p>
+        <div class="field-group" id="recovery-email-group"><label for="recovery-email">নিবন্ধিত Gmail</label><input id="recovery-email" type="email" autocomplete="email" required placeholder="আপনার Gmail ঠিকানা"></div>
+        <div class="field-group" id="recovery-phone-group"><label for="recovery-phone">নিবন্ধিত মোবাইল নম্বর</label><input id="recovery-phone" type="tel" inputmode="numeric" maxlength="11" autocomplete="tel" placeholder="01XXXXXXXXX" required></div>
+        <div class="field-group" id="recovery-otp-group" hidden><label for="recovery-otp">OTP</label><input id="recovery-otp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></div>
         <div class="field-group" id="new-password-group" hidden><label for="new-password">নতুন পাসওয়ার্ড</label><input id="new-password" type="password" minlength="8" autocomplete="new-password"></div>
         <div class="field-group" id="new-password-confirm-group" hidden><label for="new-password-confirm">নতুন পাসওয়ার্ড নিশ্চিত করুন</label><input id="new-password-confirm" type="password" minlength="8" autocomplete="new-password"></div>
-        <button type="button" id="recovery-submit" class="button auth-submit">ইমেইলে রিসেট লিংক পাঠান</button>
+        <button type="button" id="recovery-submit" class="button auth-submit">তথ্য যাচাই করে এগিয়ে যান</button>
         <button type="button" id="recovery-cancel" class="auth-switch">লগইনে ফিরে যান</button>
       </section>
       <p id="auth-message" class="auth-message" role="status" aria-live="polite"></p>
