@@ -461,7 +461,7 @@
     submit.disabled=true; submit.textContent="অনুরোধ পাঠানো হচ্ছে...";
     withdrawMessage("");
     try {
-      const response=await fetch("http://127.0.0.1:3001/api/withdrawal",{
+      const response=await fetch("/api/withdrawal",{
         method:"POST",
         headers:{"Content-Type":"application/json","Authorization":"Bearer "+session.access_token},
         body:JSON.stringify({method,account,amount})
