@@ -231,3 +231,23 @@ test("member withdrawal fails closed when payout encryption key is malformed", a
   });
   assert.equal(res.status, 503);
 });
+
+
+test("member withdrawal distinguishes an invalid Supabase API key from an invalid user session", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => Response.json({ message: "Invalid API key" }, { status: 401 });
+  try {
+    const key = Buffer.from(webcrypto.getRandomValues(new Uint8Array(32))).toString("base64");
+    const req = request("https://earnstationbd.example/api/withdrawal", "POST", {
+      Origin: "https://earnstationbd.example",
+      Authorization: "Bearer invalid-session"
+    }, JSON.stringify({ method: "bkash", account: "01712345678", amount: 150 }));
+    const res = await memberWithdrawal({
+      request: req,
+      env: { SUPABASE_URL: "https://test.supabase.co", SUPABASE_PUBLISHABLE_KEY: "invalid-key", PAYOUT_ENCRYPTION_KEY: key }
+    });
+    assert.equal(res.status, 503);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
