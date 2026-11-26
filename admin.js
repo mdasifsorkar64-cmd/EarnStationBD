@@ -173,48 +173,10 @@ async function loadOffers(){
   }
   async function reviewConversion(id,decision){if(!confirm(decision==="approved"?"যাচাইকৃত কনভার্সন অনুমোদন করবেন? কমিশন একবার লেজারে যোগ হবে।":"এই কনভার্সন বাতিল করবেন?"))return;message("কনভার্সন পর্যালোচনা হচ্ছে...");const {error}=await client.rpc("admin_review_conversion",{p_conversion_id:id,p_decision:decision,p_note:""});if(error)throw error;message("কনভার্সন পর্যালোচনা সম্পন্ন।");await loadConversions();}
   async function loadWithdrawals(){
-    $("withdrawals-list").textContent="লোড হচ্ছে...";
-    const {data:{session}}=await client.auth.getSession();
-    if(!session) throw new Error("আবার লগইন করুন।");
-    const response=await fetch("http://127.0.0.1:3001/api/admin/withdrawals",{headers:{Authorization:"Bearer "+session.access_token}});
-    const result=await response.json();
-    if(!response.ok) throw new Error(result.error||"উইথড্র তালিকা লোড করা যায়নি।");
-    const data=result.withdrawals||[];
-    const root=$("withdrawals-list");root.replaceChildren();
-    $("stat-withdrawals").textContent=data.filter(x=>["pending","approved"].includes(x.status)).length;
-    if(!data.length){root.textContent="এখনো কোনো উত্তোলনের অনুরোধ নেই।";return;}
-    data.forEach(w=>{
-      const row=el("div","admin-row"),info=el("div","admin-row-main");
-      const member=w.member||{};
-      info.append(
-        el("b","", (w.is_test?"[TEST] পরীক্ষামূলক · ":"")+money(w.amount)+" · "+(w.payout_method==="bkash"?"বিকাশ":"নগদ")+" · "+statusBn(w.status)),
-        el("small","","সদস্য: "+(member.full_name||"নাম নেই")+" · "+(member.phone||"ফোন নেই")),
-        el("small","","পেমেন্ট নম্বর: "+w.payout_account),
-        el("small","","User ID: "+w.user_id),
-        el("small","","উইথড্রের সময়: "+fmt(w.created_at)+" · শেষ সময়: "+fmt(w.expires_at))
-      );
-      if(w.paid_at) info.append(el("small","","পেমেন্ট সম্পন্ন: "+fmt(w.paid_at)));
-      if(w.payment_transaction_id) info.append(el("small","","Transaction ID: "+w.payment_transaction_id));
-      if(w.refunded_at) info.append(el("small","","টাকা ফেরত: "+fmt(w.refunded_at)));
-      if(w.admin_note) info.append(el("small","","নোট: "+w.admin_note));
-      if(w.is_test) info.append(el("small","","এটি পরীক্ষামূলক অনুরোধ—বাস্তব পেমেন্ট নিষিদ্ধ। ৫ ঘণ্টা পরে স্বয়ংক্রিয়ভাবে REFUNDED হবে।"));
-      row.append(info);
-      if(!w.is_test && ["pending","approved"].includes(w.status)){
-        row.append(button("টাকা পাঠিয়েছি · SUCCESS করুন",async()=>{
-          const transactionId=prompt("বিকাশ/নগদে "+money(w.amount)+" পাঠানোর পর প্রাপ্ত Transaction ID লিখুন:");
-          if(transactionId===null)return;
-          const cleanTransactionId=transactionId.trim();
-          if(cleanTransactionId.length<4||cleanTransactionId.length>100){throw new Error("সঠিক Transaction ID লিখুন (৪–১০০ অক্ষর)।");}
-          if(!confirm("সদস্যকে "+money(w.amount)+" সত্যিই পাঠানো হয়েছে এবং Transaction ID "+cleanTransactionId+" সঠিক? শুধু টাকা পাঠানোর পর SUCCESS করুন।"))return;
-          const {data:{session:active}}=await client.auth.getSession();
-          const res=await fetch("http://127.0.0.1:3001/api/admin/withdrawals/complete",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+active.access_token},body:JSON.stringify({withdrawal_id:w.id,transaction_id:cleanTransactionId})});
-          const out=await res.json();if(!res.ok)throw new Error(out.error||"স্ট্যাটাস আপডেট হয়নি।");
-          message(out.status==="refunded"?"৫ ঘণ্টা পার হয়েছে—টাকা সদস্যকে ফেরত দেওয়া হয়েছে।":"পেমেন্ট SUCCESS হিসেবে সংরক্ষিত হয়েছে।");
-          await loadWithdrawals();
-        },"active"));
-      }
-      root.append(row);
-    });
+    const root=$("withdrawals-list");
+    root.replaceChildren();
+    root.textContent="উত্তোলনের তালিকা সাময়িকভাবে বন্ধ আছে। নিরাপদ অনলাইন পেমেন্ট API এখনো যুক্ত হয়নি।";
+    $("stat-withdrawals").textContent="—";
   }
   $("offer-form").addEventListener("submit",async event=>{event.preventDefault();const form=event.currentTarget,data=Object.fromEntries(new FormData(form).entries());try{const url=new URL(data.destination_url);if(!["https:","http:"].includes(url.protocol))throw new Error("শুধু HTTP/HTTPS লিংক ব্যবহার করুন।");$("offer-submit").disabled=true;message("অফার সংরক্ষণ হচ্ছে...");const {error}=await client.from("offers").insert({...data,status:"pending"});if(error)throw error;form.reset();message("অফার সংরক্ষিত হয়েছে। Pending অবস্থায় রাখা হয়েছে।");await loadOffers();}catch(e){message(e.message||"অফার সংরক্ষণ করা যায়নি।",true);}finally{$("offer-submit").disabled=false;}});
   $("refresh-offers").addEventListener("click",()=>loadOffers().catch(e=>message(e.message,true)));
