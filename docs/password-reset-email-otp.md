@@ -22,8 +22,7 @@ Use **EarnStationBD-Test** only. Do not configure or change production while tes
 1. Open Google Cloud Console and create/select a project.
 2. Configure Google Auth Platform / OAuth consent screen. While testing, choose the testing audience and add the test Gmail as a test user if Google requires it.
 3. Create an OAuth Client ID of type **Web application**.
-4. Add the branch preview origin as an Authorized JavaScript origin:
-   `https://feature-password-email.earnstationbd.pages.dev`
+4. After Cloudflare finishes deploying this PR, copy the exact Preview URL shown in the PR's Cloudflare deployment comment. Add only that preview origin (scheme + hostname, without a path) as an Authorized JavaScript origin. Do not use the older PR #12 preview hostname.
 5. Add the Test Supabase project's OAuth callback as an Authorized redirect URI:
    `https://rxfgozophvsriaslifab.supabase.co/auth/v1/callback`
 6. Copy the Client ID and Client Secret directly into Supabase Dashboard. Never commit or paste the Client Secret into chat.
@@ -32,9 +31,7 @@ Use **EarnStationBD-Test** only. Do not configure or change production while tes
 
 1. Open EarnStationBD-Test → Authentication → Providers → Google.
 2. Enable Google and enter the Web Client ID and Client Secret from Google Cloud.
-3. In Authentication → URL Configuration, add the branch preview recovery URL to the Redirect URLs allow list:
-   `https://feature-password-email.earnstationbd.pages.dev/auth.html?recover=google`
-   If Supabase rejects the query-specific URL, allow the exact preview origin/path according to the dashboard's URL pattern guidance; do not add production URLs for this test.
+3. In Authentication → URL Configuration, add the exact recovery callback URL based on the Cloudflare Preview URL: append `/auth.html?recover=google` to that preview origin. Do not use the older PR #12 preview hostname or add production URLs for this test.
 4. Confirm the Test Project has the existing `profiles` phone-read policy for an authenticated user to read their own profile.
 
 ## Test checklist
