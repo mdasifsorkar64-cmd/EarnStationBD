@@ -13,6 +13,8 @@ create table if not exists public.admin_email_allowlist (
 );
 alter table public.admin_email_allowlist enable row level security;
 revoke all on table public.admin_email_allowlist from public,anon,authenticated;
+drop policy if exists admin_email_allowlist_deny_all on public.admin_email_allowlist;
+create policy admin_email_allowlist_deny_all on public.admin_email_allowlist for all to public using (false) with check (false);
 insert into public.admin_email_allowlist(email,admin_kind,enabled)
 values ('mdasifsorkar64@gmail.com','primary',true),('mdasifsorkar1414@gmail.com','backup',true)
 on conflict(email) do update set admin_kind=excluded.admin_kind,enabled=true;
