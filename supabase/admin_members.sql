@@ -16,3 +16,7 @@ begin
 end; $$;
 revoke all on function public.admin_list_members(text) from public,anon;
 grant execute on function public.admin_list_members(text) to authenticated;
+
+-- The admin-role helper is not a public RPC; only signed-in users may call it.
+revoke all on function public.is_admin() from public, anon;
+grant execute on function public.is_admin() to authenticated;
