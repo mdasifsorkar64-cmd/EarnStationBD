@@ -116,6 +116,16 @@
 </form>
 <div id="settings-status" class="admin-message" role="status">সেটিংস লোড হচ্ছে...</div><div class="admin-panel referral-admin-panel"><div class="view-heading"><div><p>REFERRAL PROGRAM</p><h3>রেফারেল কমিশন নিয়ন্ত্রণ</h3><span>প্রতি সফল ও যাচাইকৃত রেফারেলে সদস্যকে কত টাকা দেওয়া হবে</span></div></div><form id="referral-settings-form" class="admin-form"><label>প্রতি সফল রেফারেলে বোনাস (৳)<input id="referral-bonus-amount" type="number" min="0" max="10000" step="0.01" required></label><button type="submit" id="save-referral-settings">রেফারেল বোনাস সংরক্ষণ</button><p class="admin-help">পরিবর্তন করলে পরবর্তী সফল রেফারেলে নতুন পরিমাণ কার্যকর হবে। আগের বোনাস বদলাবে না। ০ দিলে নতুন বোনাস বন্ধ থাকবে।</p></form><div class="referral-admin-stats" id="referral-admin-stats">রেফারেল হিসাব লোড হচ্ছে...</div><div id="referral-settings-status" class="admin-message" role="status"></div></div>
 </div>
+<div class="admin-panel">
+  <h3>জরুরি Admin Recovery</h3>
+  <p class="admin-help">শুধু নির্ধারিত দুটি Gmail-এর জন্য। Backup Admin-কে আগে সদস্য হিসেবে নিবন্ধন ও ইমেইল যাচাই সম্পন্ন করতে হবে।</p>
+  <div class="admin-row-actions">
+    <button type="button" class="status-button active" id="activate-backup-admin">নির্ধারিত Backup Admin চালু করুন</button>
+    <button type="button" class="status-button" id="recover-primary-admin">Primary Admin পুনরুদ্ধার করুন</button>
+  </div>
+  <div id="admin-recovery-status" class="admin-message" role="status">Primary: mdasifsorkar64@gmail.com · Backup: mdasifsorkar1414@gmail.com</div>
+  <p class="admin-help">প্রথম বোতামটি শুধু Primary Admin ব্যবহার করতে পারবেন। দ্বিতীয় বোতামটি শুধু Backup Admin ব্যবহার করতে পারবেন। সার্ভার উভয় ক্ষেত্রেই Gmail পরিচয় যাচাই করে; অন্য কোনো অ্যাকাউন্টকে Admin করা যাবে না।</p>
+</div>
 </section>
 <section class="admin-view" id="view-site">
 <div class="view-heading"><div><p>SITE CONTROL</p><h2>ওয়েবসাইট কাস্টমাইজ</h2><span>সাইটের নাম, ঘোষণা ও পরিচিতি সম্পাদনা</span></div><button class="secondary" id="refresh-site">↻ রিফ্রেশ</button></div>
