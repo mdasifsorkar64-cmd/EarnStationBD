@@ -146,7 +146,7 @@
     recoveryLink.hidden = false;
     setMode("login");
   }
-  recoveryLink.addEventListener("click", () => showRecovery("request"));
+  recoveryLink.addEventListener("click", () => { recoveryOAuthHandled = false; showRecovery("request"); });
   document.getElementById("recovery-cancel").addEventListener("click", hideRecovery);
 
   async function verifyGoogleRecovery(user) {
@@ -158,6 +158,8 @@
       if (!details?.email || !details?.phone) throw new Error("পুনরুদ্ধারের তথ্য পাওয়া যায়নি। আবার শুরু করুন।");
       recoveryEmail = details.email;
       recoveryPhone = details.phone;
+      const googleProviders = user?.app_metadata?.providers || [];
+      if (user?.app_metadata?.provider !== "google" && !googleProviders.includes("google")) throw new Error("Google পরিচয় যাচাই করা যায়নি। Google দিয়ে আবার সাইন ইন করুন।");
       const googleEmail = String(user?.email || "").trim().toLowerCase();
       if (!googleEmail || googleEmail !== recoveryEmail) throw new Error("Google-এ নির্বাচিত Gmail নিবন্ধিত Gmail-এর সঙ্গে মিলছে না।");
       const { data: profile, error } = await client.from("profiles").select("phone").eq("id", user.id).maybeSingle();
@@ -165,7 +167,6 @@
         throw new Error("Google অ্যাকাউন্ট ও নিবন্ধিত মোবাইল নম্বরের মিল পাওয়া যায়নি।");
       }
       recoveryUser = user;
-      sessionStorage.removeItem(recoverySessionKey);
       showRecovery("password");
       setMessage("Google পরিচয় ও মোবাইল নম্বর যাচাই সফল। এখন নতুন পাসওয়ার্ড দিন।", "success");
     } catch (error) {
