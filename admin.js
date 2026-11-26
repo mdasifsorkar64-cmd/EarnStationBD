@@ -123,6 +123,28 @@
     catch(e){$("referral-settings-status").textContent=e.message||"রেফারেল বোনাস সংরক্ষণ হয়নি।";message(e.message||"রেফারেল বোনাস সংরক্ষণ হয়নি।",true);}
     finally{$("save-referral-settings").disabled=false;}
   });
+  $("activate-backup-admin").addEventListener("click",async()=>{
+    if(!confirm("শুধু mdasifsorkar1414@gmail.com-কে Backup Admin হিসেবে চালু করবেন? আগে ওই Gmail দিয়ে নিবন্ধন ও ইমেইল যাচাই সম্পন্ন থাকতে হবে।"))return;
+    const b=$("activate-backup-admin"),status=$("admin-recovery-status");b.disabled=true;status.textContent="Backup Admin যাচাই ও সক্রিয় করা হচ্ছে...";
+    try{
+      const {error}=await client.rpc("admin_promote_backup_admin");
+      if(error)throw error;
+      status.textContent="Backup Admin সফলভাবে সক্রিয় হয়েছে।";
+      message("নির্ধারিত Backup Admin সক্রিয় হয়েছে।");
+    }catch(e){status.textContent=e.message||"Backup Admin সক্রিয় করা যায়নি।";message(status.textContent,true);}
+    finally{b.disabled=false;}
+  });
+  $("recover-primary-admin").addEventListener("click",async()=>{
+    if(!confirm("Primary Admin mdasifsorkar64@gmail.com-এর Admin ভূমিকা ও অ্যাকাউন্ট অবস্থা Active করবেন?"))return;
+    const b=$("recover-primary-admin"),status=$("admin-recovery-status");b.disabled=true;status.textContent="Primary Admin পুনরুদ্ধার করা হচ্ছে...";
+    try{
+      const {error}=await client.rpc("backup_admin_recover_primary");
+      if(error)throw error;
+      status.textContent="Primary Admin পুনরুদ্ধার হয়েছে। Primary Admin-কে নতুন করে লগইন করতে হবে।";
+      message("Primary Admin পুনরুদ্ধার হয়েছে।");
+    }catch(e){status.textContent=e.message||"Primary Admin পুনরুদ্ধার করা যায়নি।";message(status.textContent,true);}
+    finally{b.disabled=false;}
+  });
     async function loadMembers(){
     $("members-list").textContent="সদস্য তালিকা লোড হচ্ছে...";
     const {data,error}=await client.rpc("admin_list_members",{p_search:$("member-search").value.trim()});
