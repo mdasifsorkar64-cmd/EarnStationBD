@@ -31,7 +31,7 @@
     const [summary,allocations,history]=await Promise.all([
       client.rpc("admin_get_owner_wallet_summary"),
       client.rpc("admin_list_owner_allocations"),
-      client.from("owner_wallet_withdrawals").select("id,amount,payout_method,payment_transaction_id,note,created_at").order("created_at",{ascending:false}).limit(100)
+      client.rpc("admin_list_owner_withdrawals")
     ]);
     if(summary.error)throw summary.error;if(allocations.error)throw allocations.error;if(history.error)throw history.error;
     const s=Array.isArray(summary.data)?summary.data[0]:summary.data;
