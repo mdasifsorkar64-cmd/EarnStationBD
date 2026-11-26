@@ -130,3 +130,18 @@ begin
  insert into public.admin_audit_log(admin_id,action,details) values(auth.uid(),'owner_wallet_withdrawal_recorded',jsonb_build_object('withdrawal_id',v_id,'amount_bdt',v_amount,'method',p_method,'transaction_id',btrim(p_transaction_id),'note',left(coalesce(p_note,''),1000)));
  return v_id;
 end; $$;
+
+revoke all on function public.admin_set_member_status(uuid,text) from public,anon;
+revoke all on function public.admin_add_test_balance(uuid,numeric) from public,anon;
+revoke all on function public.admin_update_referral_bonus(numeric) from public,anon;
+revoke all on function public.admin_update_community_links(text,text,text,text) from public,anon;
+revoke all on function public.admin_update_site_settings(text,text,text,text) from public,anon;
+revoke all on function public.admin_set_partner_payment_status(uuid,text) from public,anon;
+revoke all on function public.admin_record_owner_withdrawal(numeric,text,text,text) from public,anon;
+grant execute on function public.admin_set_member_status(uuid,text) to authenticated;
+grant execute on function public.admin_add_test_balance(uuid,numeric) to authenticated;
+grant execute on function public.admin_update_referral_bonus(numeric) to authenticated;
+grant execute on function public.admin_update_community_links(text,text,text,text) to authenticated;
+grant execute on function public.admin_update_site_settings(text,text,text,text) to authenticated;
+grant execute on function public.admin_set_partner_payment_status(uuid,text) to authenticated;
+grant execute on function public.admin_record_owner_withdrawal(numeric,text,text,text) to authenticated;
