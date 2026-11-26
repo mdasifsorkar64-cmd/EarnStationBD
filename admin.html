@@ -71,7 +71,10 @@
 <h3>সদস্যদের উত্তোলন আবেদন নিয়ন্ত্রণ</h3>
 <form id="withdrawal-control-form" class="admin-form">
 <label class="settings-toggle"><input id="withdrawals-enabled" type="checkbox"> নতুন উত্তোলনের আবেদন গ্রহণ চালু</label>
-<button type="submit" id="save-withdrawal-control">অবস্থা সংরক্ষণ করুন</button>
+<label for="withdrawal-announcement">সদস্যদের জন্য ঘোষণা</label>
+<textarea id="withdrawal-announcement" rows="4" maxlength="500" placeholder="যেমন: সাময়িক রক্ষণাবেক্ষণের কারণে উত্তোলন সেবা বন্ধ রয়েছে।"></textarea>
+<small class="admin-help">এই ঘোষণা সদস্যদের উত্তোলন বিভাগের শুরুতে দেখানো হবে। সর্বোচ্চ ৫০০ অক্ষর। ফাঁকা রাখলে কোনো অতিরিক্ত ঘোষণা দেখাবে না।</small>
+<button type="submit" id="save-withdrawal-control">অবস্থা ও ঘোষণা সংরক্ষণ করুন</button>
 <div id="withdrawal-control-status" class="admin-message" role="status">উত্তোলন নিয়ন্ত্রণ লোড হচ্ছে...</div>
 <p class="admin-help">বন্ধ করলে সদস্যরা নতুন আবেদন জমা দিতে পারবে না। চালু করলে নতুন আবেদন গ্রহণের অনুমতি থাকবে। আগে জমা থাকা আবেদন ও হিসাব অপরিবর্তিত থাকবে। এই সুইচ শুধু আবেদন গ্রহণ নিয়ন্ত্রণ করে; এটি নিজে থেকে বিকাশ/নগদ পেমেন্ট পাঠায় না।</p>
 </form>
