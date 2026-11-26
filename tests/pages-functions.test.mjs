@@ -80,3 +80,104 @@ test("admin withdrawal route accepts its own HTTPS custom domain origin", async 
   const res = await adminWithdrawals({ request: req, env: {} });
   assert.equal(res.status, 503);
 });
+
+
+test("member withdrawal validates session, encrypts payout details and calls the guarded RPC", async () => {
+  const key = Buffer.from(webcrypto.getRandomValues(new Uint8Array(32))).toString("base64");
+  const originalFetch = globalThis.fetch;
+  let rpcBody;
+  globalThis.fetch = async (url, init = {}) => {
+    if (String(url).endsWith("/auth/v1/user")) return Response.json({ id: "member-1" });
+    if (String(url).endsWith("/rest/v1/rpc/request_withdrawal")) {
+      rpcBody = JSON.parse(init.body);
+      return new Response(JSON.stringify("00000000-0000-4000-8000-000000000001"), { status: 200 });
+    }
+    throw new Error("Unexpected URL " + url);
+  };
+  try {
+    const req = request("https://earnstationbd.example/api/withdrawal", "POST", {
+      Origin: "https://earnstationbd.example",
+      Authorization: "Bearer member-session"
+    }, JSON.stringify({ method: "bkash", account: "01712345678", amount: 150 }));
+    const res = await memberWithdrawal({
+      request: req,
+      env: { SUPABASE_URL: "https://test.supabase.co", SUPABASE_PUBLISHABLE_KEY: "public-key", PAYOUT_ENCRYPTION_KEY: key }
+    });
+    assert.equal(res.status, 200);
+    const result = await res.json();
+    assert.equal(result.request_id, "00000000-0000-4000-8000-000000000001");
+    assert.equal(rpcBody.p_amount, 150);
+    assert.equal(rpcBody.p_method, "bkash");
+    assert.equal(await decryptPayoutAccount(rpcBody.p_account_ciphertext, key), "01712345678");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("admin withdrawal route denies a signed-in non-admin", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    if (String(url).endsWith("/auth/v1/user")) return Response.json({ id: "member-1" });
+    if (String(url).includes("/rest/v1/profiles?")) return Response.json([{ role: "member", account_status: "active" }]);
+    throw new Error("Unexpected URL " + url);
+  };
+  try {
+    const req = request("https://earnstationbd.example/api/admin/withdrawals", "GET", {
+      Origin: "https://earnstationbd.example",
+      Authorization: "Bearer member-session"
+    });
+    const res = await adminWithdrawals({
+      request: req,
+      env: { SUPABASE_URL: "https://test.supabase.co", SUPABASE_PUBLISHABLE_KEY: "public-key", PAYOUT_ENCRYPTION_KEY: "A".repeat(44) }
+    });
+    assert.equal(res.status, 403);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("admin withdrawal list returns decrypted payout details only after admin verification", async () => {
+  const key = Buffer.from(webcrypto.getRandomValues(new Uint8Array(32))).toString("base64");
+  const encrypted = await encryptPayoutAccount("01712345678", key);
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    const value = String(url);
+    if (value.endsWith("/auth/v1/user")) return Response.json({ id: "admin-1" });
+    if (value.includes("/rest/v1/profiles?") && value.includes("select=role%2Caccount_status")) {
+      return Response.json([{ role: "admin", account_status: "active" }]);
+    }
+    if (value.includes("/rest/v1/withdrawal_requests?")) {
+      return Response.json([{
+        id: "00000000-0000-4000-8000-000000000002",
+        user_id: "member-1",
+        amount: 150,
+        payout_method: "bkash",
+        payout_account_ciphertext: encrypted,
+        status: "pending",
+        is_test: false,
+        created_at: "2026-11-26T10:00:00Z"
+      }]);
+    }
+    if (value.includes("/rest/v1/profiles?")) {
+      return Response.json([{ id: "member-1", full_name: "Test Member", phone: "01700000000" }]);
+    }
+    throw new Error("Unexpected URL " + url);
+  };
+  try {
+    const req = request("https://earnstationbd.example/api/admin/withdrawals", "GET", {
+      Origin: "https://earnstationbd.example",
+      Authorization: "Bearer admin-session"
+    });
+    const res = await adminWithdrawals({
+      request: req,
+      env: { SUPABASE_URL: "https://test.supabase.co", SUPABASE_PUBLISHABLE_KEY: "public-key", PAYOUT_ENCRYPTION_KEY: key }
+    });
+    assert.equal(res.status, 200);
+    const result = await res.json();
+    assert.equal(result.withdrawals.length, 1);
+    assert.equal(result.withdrawals[0].payout_account, "01712345678");
+    assert.equal(result.withdrawals[0].member.full_name, "Test Member");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
