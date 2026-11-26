@@ -180,6 +180,7 @@ async function loadOffers(){
     const row=Array.isArray(data)?data[0]:data;
     if(!row)throw new Error("উত্তোলন নিয়ন্ত্রণের তথ্য পাওয়া যায়নি।");
     $("withdrawals-enabled").checked=!!row.withdrawals_enabled;
+    $("withdrawal-announcement").value=row.withdrawal_announcement||"";
     status.textContent=row.withdrawals_enabled
       ?"অবস্থা: চালু — নতুন উত্তোলনের আবেদন গ্রহণের অনুমতি আছে।"
       :"অবস্থা: বন্ধ — নতুন উত্তোলনের আবেদন গ্রহণ করা হবে না।";
@@ -193,7 +194,9 @@ async function loadOffers(){
     if(!confirm(promptText))return;
     $("save-withdrawal-control").disabled=true;
     try{
-      const {error}=await client.rpc("admin_set_withdrawals_enabled",{p_enabled:enabled});
+      const announcement=$("withdrawal-announcement").value.trim();
+      if(announcement.length>500)throw new Error("ঘোষণা সর্বোচ্চ ৫০০ অক্ষরের হতে পারবে।");
+      const {error}=await client.rpc("admin_set_withdrawals_enabled",{p_enabled:enabled,p_announcement:announcement});
       if(error)throw error;
       await loadWithdrawalControl();
       message(enabled?"নতুন উত্তোলনের আবেদন গ্রহণ চালু হয়েছে।":"নতুন উত্তোলনের আবেদন গ্রহণ বন্ধ হয়েছে।");
