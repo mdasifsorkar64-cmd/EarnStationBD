@@ -40,6 +40,7 @@ export async function onRequest({ request, env }) {
   const supabaseKey = env.SUPABASE_PUBLISHABLE_KEY || env.SUPABASE_ANON_KEY;
   const encryptionKey = env.PAYOUT_ENCRYPTION_KEY;
   if (!supabaseUrl || !supabaseKey || !encryptionKey) return response(request, 503, { error: "সার্ভারের নিরাপদ কনফিগারেশন এখনো সম্পূর্ণ নয়।" });
+  let supabaseHost;\n  try { const parsed = new URL(supabaseUrl); if (parsed.protocol !== "https:" || !parsed.hostname.endsWith(".supabase.co")) throw new Error(); supabaseHost = parsed.hostname; } catch { return response(request, 503, { error: "Supabase URL কনফিগারেশন সঠিক নয়।" }); }\n
 
   let input;
   try {
