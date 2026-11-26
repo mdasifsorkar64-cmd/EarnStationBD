@@ -1,17 +1,18 @@
 import { encryptPayoutAccount } from "../_shared/payout-crypto.js";
 
-const allowedOrigin = (origin) => {
+const allowedOrigin = (origin, requestUrl) => {
   if (!origin) return null;
   try {
     const url = new URL(origin);
     if (url.protocol !== "https:") return null;
+    if (requestUrl && url.origin === new URL(requestUrl).origin) return origin;
     if (url.hostname === "earnstationbd.pages.dev" || url.hostname.endsWith(".earnstationbd.pages.dev")) return origin;
     return null;
   } catch { return null; }
 };
 
 function response(request, status, payload) {
-  const origin = allowedOrigin(request.headers.get("Origin"));
+  const origin = allowedOrigin(request.headers.get("Origin"), request.url);
   const headers = {
     "Content-Type": "application/json; charset=utf-8",
     "Cache-Control": "no-store",
@@ -30,7 +31,7 @@ export async function onRequest({ request, env }) {
   if (request.method !== "POST") return response(request, 405, { error: "এই অনুরোধের পদ্ধতি অনুমোদিত নয়।" });
 
   const origin = request.headers.get("Origin");
-  if (origin && !allowedOrigin(origin)) return response(request, 403, { error: "এই ওয়েবসাইট থেকে অনুরোধ অনুমোদিত নয়।" });
+  if (origin && !allowedOrigin(origin, request.url)) return response(request, 403, { error: "এই ওয়েবসাইট থেকে অনুরোধ অনুমোদিত নয়।" });
 
   const authorization = request.headers.get("Authorization") || "";
   if (!/^Bearer\s+\S+$/i.test(authorization)) return response(request, 401, { error: "আবার লগইন করুন।" });
