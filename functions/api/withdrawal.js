@@ -64,7 +64,14 @@ export async function onRequest({ request, env }) {
     const userResponse = await fetch(supabaseUrl + "/auth/v1/user", {
       headers: { apikey: supabaseKey, Authorization: authorization }
     });
-    if (!userResponse.ok) return response(request, 401, { error: "আবার লগইন করুন।" });
+    if (!userResponse.ok) {
+      const authError = await userResponse.clone().json().catch(() => ({}));
+      const authMessage = String(authError.message || authError.msg || "");
+      if (/invalid api key|api key.*invalid/i.test(authMessage)) {
+        return response(request, 503, { error: "Supabase API key কনফিগারেশন সঠিক নয়।" });
+      }
+      return response(request, 401, { error: "আবার লগইন করুন।" });
+    }
 
     const result = await fetch(supabaseUrl + "/rest/v1/rpc/request_withdrawal", {
       method: "POST",
