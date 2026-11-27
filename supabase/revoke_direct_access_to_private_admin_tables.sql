@@ -8,5 +8,6 @@ revoke all privileges on table
   public.partner_postback_events,
   public.platform_settings,
   public.referral_rewards,
-  public.referral_settings
+  public.referral_settings,
+  public.owner_wallet_withdrawals
 from public, anon, authenticated;
