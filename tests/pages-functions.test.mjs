@@ -143,9 +143,7 @@ test("admin withdrawal list returns decrypted payout details only after admin ve
   globalThis.fetch = async (url) => {
     const value = String(url);
     if (value.endsWith("/auth/v1/user")) return Response.json({ id: "admin-1" });
-    if (value.includes("/rest/v1/profiles?") && value.includes("select=role")) {
-      return Response.json([{ role: "admin", account_status: "active" }]);
-    }
+    if (value.endsWith("/rest/v1/rpc/is_admin")) return Response.json(true);
     if (value.includes("/rest/v1/withdrawal_requests?")) {
       return Response.json([{
         id: "00000000-0000-4000-8000-000000000002",
@@ -199,9 +197,7 @@ test("admin withdrawal rejects oversized review bodies", async () => {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async (url) => {
     if (String(url).endsWith("/auth/v1/user")) return Response.json({ id: "admin-1" });
-    if (String(url).includes("/rest/v1/profiles?") && String(url).includes("select=role")) {
-      return Response.json([{ role: "admin", account_status: "active" }]);
-    }
+    if (String(url).endsWith("/rest/v1/rpc/is_admin")) return Response.json(true);
     throw new Error("Unexpected URL " + url);
   };
   try {
