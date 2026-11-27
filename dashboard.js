@@ -406,6 +406,121 @@
     }
   });
 
+  const passwordChangeForm = $("password-change-form");
+  passwordChangeForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const currentPassword = $("current-password").value;
+    const newPassword = $("new-password").value;
+    const confirmPassword = $("confirm-new-password").value;
+    const message = $("password-change-message");
+    const button = $("password-change-submit");
+    const showPasswordMessage = (value, type="") => { message.textContent = value; message.className = "profile-message " + type; };
+    if (!currentUser?.email) return showPasswordMessage("অ্যাকাউন্টের ইমেইল পাওয়া যায়নি। আবার লগইন করুন।", "error");
+    if (!currentPassword) return showPasswordMessage("বর্তমান পাসওয়ার্ড লিখুন।", "error");
+    if (newPassword.length < 8) return showPasswordMessage("নতুন পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে।", "error");
+    if (newPassword !== confirmPassword) return showPasswordMessage("নতুন পাসওয়ার্ড দুটি মিলছে না।", "error");
+    if (currentPassword === newPassword) return showPasswordMessage("নতুন পাসওয়ার্ডটি বর্তমান পাসওয়ার্ড থেকে আলাদা হতে হবে।", "error");
+    button.disabled = true; button.textContent = "যাচাই হচ্ছে..."; showPasswordMessage("");
+    try {
+      const { error: verifyError } = await client.auth.signInWithPassword({ email: currentUser.email, password: currentPassword });
+      if (verifyError) throw new Error("বর্তমান পাসওয়ার্ড সঠিক নয়। আবার পরীক্ষা করুন।");
+      button.textContent = "সংরক্ষণ হচ্ছে...";
+      const { error: updateError } = await client.auth.updateUser({ password: newPassword });
+      if (updateError) throw updateError;
+      passwordChangeForm.reset();
+      showPasswordMessage("পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে। নতুন পাসওয়ার্ড দিয়ে পরবর্তী লগইন করতে পারবেন।", "success");
+    } catch (error) {
+      showPasswordMessage(error.message || "পাসওয়ার্ড পরিবর্তন করা যায়নি। আবার চেষ্টা করুন।", "error");
+    } finally {
+      button.disabled = false; button.textContent = "পাসওয়ার্ড পরিবর্তন করুন";
+    }
+  });
+
+  const recoveryToggle = $("forgot-current-password");
+  const recoveryPanel = $("profile-recovery-panel");
+  const recoveryMessage = $("profile-recovery-message");
+  let recoveryStage = "request";
+  let recoveryVerified = false;
+  const recoverySay = (value, type="") => { recoveryMessage.textContent = value; recoveryMessage.className = "profile-message " + type; };
+  recoveryToggle.addEventListener("click", () => {
+    recoveryPanel.hidden = !recoveryPanel.hidden;
+    $("profile-recovery-email").value = currentUser?.email || "";
+    $("profile-recovery-phone").value = $("profile-phone").value || "";
+    recoverySay("");
+  });
+  $("profile-recovery-send").addEventListener("click", async () => {
+    const email = $("profile-recovery-email").value.trim().toLowerCase();
+    const phone = $("profile-recovery-phone").value.replace(/\D/g, "");
+    if (!currentUser?.email || email !== currentUser.email.toLowerCase()) return recoverySay("লগইন করা অ্যাকাউন্টের নিবন্ধিত ইমেইল ব্যবহার করুন।", "error");
+    if (!/^01[3-9][0-9]{8}$/.test(phone)) return recoverySay("সঠিক ১১ সংখ্যার ফোন নম্বর লিখুন।", "error");
+    const button = $("profile-recovery-send"); button.disabled = true;
+    try {
+      sessionStorage.setItem("esbd_profile_recovery_phone", phone);
+      const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + "/dashboard.html" });
+      if (error) throw error;
+      recoveryStage = "otp"; $("profile-recovery-otp-area").hidden = false;
+      recoverySay("আপনার ইমেইলে ৬ সংখ্যার OTP পাঠানো হয়েছে। ইনবক্স ও স্প্যাম ফোল্ডার দেখুন।", "success");
+    } catch (error) { recoverySay(error.message || "OTP পাঠানো যায়নি।", "error"); }
+    finally { button.disabled = false; }
+  });
+  $("profile-recovery-verify").addEventListener("click", async () => {
+    const token = $("profile-recovery-otp").value.trim();
+    if (!/^\d{6}$/.test(token)) return recoverySay("ইমেইলে পাওয়া ৬ সংখ্যার OTP লিখুন।", "error");
+    const button = $("profile-recovery-verify"); button.disabled = true;
+    try {
+      const { data, error } = await client.auth.verifyOtp({ email: currentUser.email, token, type: "recovery" });
+      if (error) throw error;
+      const user = data.user || data.session?.user;
+      if (!user || user.id !== currentUser.id) throw new Error("OTP অন্য অ্যাকাউন্টের জন্য।");
+      const { data: profile, error: profileError } = await client.from("profiles").select("phone").eq("id", user.id).maybeSingle();
+      const savedPhone = String(profile?.phone || "").replace(/\D/g, "");
+      const enteredPhone = sessionStorage.getItem("esbd_profile_recovery_phone") || "";
+      if (profileError || !profile || savedPhone !== enteredPhone) throw new Error("ফোন নম্বরটি এই অ্যাকাউন্টের সংরক্ষিত নম্বরের সঙ্গে মিলছে না।");
+      recoveryVerified = true;
+      $("profile-recovery-password-area").hidden = false;
+      recoverySay("ইমেইল OTP ও সংরক্ষিত ফোন নম্বর মিলেছে। নতুন পাসওয়ার্ড দিন।", "success");
+    } catch (error) { recoverySay(error.message || "OTP যাচাই করা যায়নি।", "error"); }
+    finally { button.disabled = false; }
+  });
+  $("profile-recovery-save").addEventListener("click", async () => {
+    if (!recoveryVerified) return recoverySay("আগে ইমেইলের OTP যাচাই করুন।", "error");
+    const password = $("profile-recovery-new-password").value;
+    const confirm = $("profile-recovery-confirm-password").value;
+    if (password.length < 8) return recoverySay("নতুন পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে।", "error");
+    if (password !== confirm) return recoverySay("দুটি পাসওয়ার্ড মিলছে না।", "error");
+    const button = $("profile-recovery-save"); button.disabled = true;
+    try {
+      const { error } = await client.auth.updateUser({ password });
+      if (error) throw error;
+      sessionStorage.removeItem("esbd_profile_recovery_phone");
+      $("password-change-form").reset();
+      $("profile-recovery-new-password").value = "";
+      $("profile-recovery-confirm-password").value = "";
+      recoveryVerified = false;
+      recoverySay("পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে। আপনার অ্যাকাউন্ট লগইন অবস্থায় আছে।", "success");
+    } catch (error) { recoverySay(error.message || "নতুন পাসওয়ার্ড সংরক্ষণ করা যায়নি।", "error"); }
+    finally { button.disabled = false; }
+  });
+
+  const passwordSecurityToggle = $("password-security-toggle");
+  const passwordSecurityContent = $("password-security-content");
+  passwordSecurityToggle.addEventListener("click", () => {
+    const isOpening = passwordSecurityContent.hidden;
+    passwordSecurityContent.hidden = !isOpening;
+    passwordSecurityToggle.setAttribute("aria-expanded", String(isOpening));
+    $("password-security-toggle-label").textContent = isOpening ? "বন্ধ করুন" : "খুলুন";
+  });
+
+  document.querySelectorAll(".password-visibility-toggle").forEach((toggle) => {
+    toggle.addEventListener("click", () => {
+      const field = $(toggle.dataset.target);
+      const show = field.type === "password";
+      field.type = show ? "text" : "password";
+      toggle.textContent = show ? "লুকান" : "দেখান";
+      toggle.setAttribute("aria-pressed", String(show));
+    });
+  });
+
   const withdrawForm = $("withdraw-form");
   const withdrawMessage = (text,type="") => { $("withdraw-message").textContent=text; $("withdraw-message").className="withdraw-message "+type; };
   withdrawForm.addEventListener("submit", async (event) => {
