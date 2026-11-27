@@ -1,33 +1,21 @@
-# Google Password Recovery — Isolated Implementation (বাংলা)
+# ইমেইল OTP দিয়ে পাসওয়ার্ড পুনরুদ্ধার (বাংলা)
 
-এই branch `fix/financial-accounting` থেকে তৈরি। এটি production code বা database পরিবর্তন করে না।
+- সদস্য নিবন্ধিত ইমেইল ও অ্যাকাউন্টে সংরক্ষিত ফোন নম্বর দেবেন।
+- Supabase Auth `resetPasswordForEmail(email)` দিয়ে ইমেইলে ৬ সংখ্যার OTP পাঠাবে।
+- Supabase Reset Password email template-এ `{{ .Token }}` থাকতে হবে; `{{ .ConfirmationURL }}` নয়।
+- সদস্য `verifyOtp({ email, token, type: "recovery" })` দিয়ে OTP যাচাই করবেন।
+- OTP সফল হলে কেবল authenticated user-এর নিজের `profiles.id = auth user.id` row থেকে ফোন নম্বর মিলিয়ে দেখা হবে।
+- SMS বা ফোন OTP পাঠানো হবে না।
+- ইমেইল OTP ও ফোন নম্বর—দুটোই মিললে authenticated Supabase session দিয়ে নতুন পাসওয়ার্ড সংরক্ষণ হবে; শেষে session clear/sign out হবে।
+- SMTP এবং Reset Password template আলাদা EarnStationBD-Test project-এ যাচাই করতে হবে। SMTP password কখনো repository-তে রাখা যাবে না।
+- Production OAuth, database, secrets বা deployment পরিবর্তন করা হবে না।
 
-## উদ্দেশ্য
-সদস্যের নিজের Google account-এর email ও EarnStationBD profile-এর registered phone মিলিয়ে authenticated Supabase session-এর মাধ্যমে password reset; তারপর session sign-out।
-
-## নিরাপত্তা নিয়ম
-- Google OAuth শুধুমাত্র আলাদা `EarnStationBD-Test` Supabase project-এ enable ও test করতে হবে।
-- Google email অবশ্যই member-এর entered registered email-এর সঙ্গে exact normalized match হতে হবে।
-- ফোনটি authenticated user-এর নিজের `profiles.id = auth user.id` row থেকে যাচাই করতে হবে; অন্য user-এর profile lookup করা যাবে না।
-- ব্যবহারকারী স্পষ্টভাবে SMS/ফোন OTP চান না। নিবন্ধিত ফোন নম্বর শুধু authenticated user's own profile-এর সঙ্গে মিলিয়ে দেখা হবে; এটি ফোনের মালিকানা প্রমাণ নয়। মূল identity proof Google OAuth।
-- Frontend-এ service-role key, secrets, recovery tokens বা passwords store/log করা যাবে না।
-- OAuth state/PKCE Supabase client-এর managed flow ব্যবহার করতে হবে; callback error/cancel, expired session, duplicate callback, wrong account, stale session নিরাপদে handle করতে হবে।
-- Reset সফল হলে session data clear ও sign-out; user-কে login screen-এ ফেরত দিতে হবে।
-- Existing password accounts-এ automatic identity linking বা account merge করা যাবে না।
-- কোনো production migration, production OAuth setting বা deployment এই branch-এ করা হবে না।
-
-## Acceptance checklist
-- [ ] Registered Google email + profile phone match → reset allowed
-- [ ] Different Google email → denied
-- [ ] Incorrect phone → denied, no password change
-- [ ] Google cancellation / OAuth error → clear Bengali message
-- [ ] Direct callback without expected recovery state → denied
-- [ ] Repeated callback cannot run reset twice
-- [ ] Weak/mismatched new password → denied
-- [ ] Password update success → sign out and clear recovery state
-- [ ] Existing email/password login and registration still work
-- [ ] Syntax checks + focused browser flow tests pass
-- [ ] Preview tested only against isolated Test Supabase project
-
-## Status
-Planning/security baseline only. Feature implementation is not yet merged or deployed. See issue #17 for follow-up.
+## Test checklist
+- [ ] সঠিক ইমেইলে OTP পৌঁছায়
+- [ ] ভুল/মেয়াদোত্তীর্ণ OTP প্রত্যাখ্যাত
+- [ ] সঠিক OTP + সঠিক profile phone → password reset
+- [ ] সঠিক OTP + ভুল phone → password অপরিবর্তিত
+- [ ] ভুল ইমেইল/অ্যাকাউন্টে reset সুবিধা প্রকাশ না করা
+- [ ] reset সফল হলে sign out
+- [ ] login/registration আগের মতো কাজ করে
+- [ ] কেবল EarnStationBD-Test project-এ end-to-end পরীক্ষা
