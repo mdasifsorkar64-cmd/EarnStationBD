@@ -9,7 +9,7 @@
 - Google OAuth শুধুমাত্র আলাদা `EarnStationBD-Test` Supabase project-এ enable ও test করতে হবে।
 - Google email অবশ্যই member-এর entered registered email-এর সঙ্গে exact normalized match হতে হবে।
 - ফোনটি authenticated user-এর নিজের `profiles.id = auth user.id` row থেকে যাচাই করতে হবে; অন্য user-এর profile lookup করা যাবে না।
-- Phone/profile match নিজে SMS OTP বা phone ownership proof নয়। মূল identity proof Google OAuth; phone অতিরিক্ত profile consistency check।
+- ব্যবহারকারী স্পষ্টভাবে SMS/ফোন OTP চান না। নিবন্ধিত ফোন নম্বর শুধু authenticated user's own profile-এর সঙ্গে মিলিয়ে দেখা হবে; এটি ফোনের মালিকানা প্রমাণ নয়। মূল identity proof Google OAuth।
 - Frontend-এ service-role key, secrets, recovery tokens বা passwords store/log করা যাবে না।
 - OAuth state/PKCE Supabase client-এর managed flow ব্যবহার করতে হবে; callback error/cancel, expired session, duplicate callback, wrong account, stale session নিরাপদে handle করতে হবে।
 - Reset সফল হলে session data clear ও sign-out; user-কে login screen-এ ফেরত দিতে হবে।
