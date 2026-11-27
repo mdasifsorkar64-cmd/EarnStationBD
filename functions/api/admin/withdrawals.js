@@ -45,7 +45,7 @@ export async function onRequest({ request, env }) {
   if (origin && !allowedOrigin(origin, request.url)) return reply(request, 403, { error: "এই ওয়েবসাইট থেকে অনুরোধ অনুমোদিত নয়।" });
 
   const authorization = request.headers.get("Authorization") || "";
-  if (!/^Bearer\s+\\S+$/i.test(authorization)) return reply(request, 401, { error: "আবার লগইন করুন।" });
+  if (!/^Bearer\s+\S+$/i.test(authorization)) return reply(request, 401, { error: "আবার লগইন করুন।" });
   const { base, apiKey } = getSupabaseConfig(request, env);
   const encryptionKey = env.PAYOUT_ENCRYPTION_KEY;
   if (!base || !apiKey || !encryptionKey) return reply(request, 503, { error: "সার্ভারের নিরাপদ কনফিগারেশন এখনো সম্পূর্ণ নয়।" });
