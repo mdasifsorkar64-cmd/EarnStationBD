@@ -5,6 +5,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
+import android.os.Build
 import android.view.View
 import android.webkit.CookieManager
 import android.webkit.WebChromeClient
@@ -67,7 +68,7 @@ class MainActivity : AppCompatActivity() {
             mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
             allowFileAccess = false
             allowContentAccess = false
-            safeBrowsingEnabled = true
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) safeBrowsingEnabled = true
             userAgentString = userAgentString + " EarnStationBDAndroid/1.0"
         }
         webView.webChromeClient = object : WebChromeClient() {
