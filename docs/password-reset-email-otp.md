@@ -1,44 +1,54 @@
-# Password reset by email OTP
+# Google-based password recovery (Test Project)
 
-The recovery UI now expects a manually entered six-digit email code. It deliberately does not use a clickable recovery URL, which prevents email link scanners from consuming the one-time token.
+This branch replaces email OTP recovery with Google OAuth identity verification. It does not send email or SMS OTP.
 
-## Required Supabase configuration before testing
+## How it works
 
-**Do not merge or deploy this change until the recovery email template is configured.** The current default Supabase recovery template uses `{{ .ConfirmationURL }}`, so it will continue sending a link and the OTP form will not receive a visible code.
+1. Member enters their registered Gmail and Bangladesh mobile number.
+2. The app stores these two values only in the current browser tab's session storage, then starts Supabase Google OAuth.
+3. Google authenticates the account. The Google email must exactly match the entered registered email.
+4. The authenticated Supabase user must have a `public.profiles` row whose phone matches the entered number.
+5. Only then does the app show the new-password form. The password is changed through the authenticated Supabase session (`auth.updateUser`), never through a browser-exposed service-role key.
+6. The app signs the user out after changing the password.
 
-Supabase currently requires Custom SMTP to be configured before editing hosted email templates in the Dashboard. Configure a trusted SMTP provider first, then open Authentication → Email Templates → Reset Password.
+The phone number is a database match, not proof that the user currently owns the SIM. Google account authentication is the actual identity proof.
 
-Suggested subject:
+## Test-project setup (manual, no secrets in GitHub/chat)
 
-```
-Your EarnStationBD password reset code
-```
+Use **EarnStationBD-Test** only. Do not configure or change production while testing.
 
-Suggested HTML body:
+### A. Google OAuth client
 
-```html
-<h2>Reset your EarnStationBD password</h2>
-<p>We received a request to reset the password for {{ .Email }}.</p>
-<p>Enter this six-digit code on the EarnStationBD password recovery page:</p>
-<p style="font-size:32px;font-weight:700;letter-spacing:8px">{{ .Token }}</p>
-<p>This code can only be used once and expires according to your Supabase Email OTP expiration setting.</p>
-<p>If you did not request this change, you can ignore this email.</p>
-```
+1. Open Google Cloud Console and create/select a project.
+2. Configure Google Auth Platform / OAuth consent screen. While testing, choose the testing audience and add the test Gmail as a test user if Google requires it.
+3. Create an OAuth Client ID of type **Web application**.
+4. After Cloudflare finishes deploying this PR, copy the exact Preview URL shown in the PR's Cloudflare deployment comment. Add only that preview origin (scheme + hostname, without a path) as an Authorized JavaScript origin. Do not use the older PR #12 preview hostname.
+5. Add the Test Supabase project's OAuth callback as an Authorized redirect URI:
+   `https://rxfgozophvsriaslifab.supabase.co/auth/v1/callback`
+6. Copy the Client ID and Client Secret directly into Supabase Dashboard. Never commit or paste the Client Secret into chat.
 
-Important:
-- Use `{{ .Token }}` in the body.
-- Do not include `{{ .ConfirmationURL }}` or any clickable verification link in this recovery template.
-- Keep the Supabase Email OTP expiration at a short, reasonable duration (the platform default is one hour; a shorter period may be selected).
-- Do not paste SMTP passwords or API keys into GitHub, chat, or the website source.
+### B. Supabase Test Project
 
-## Test plan
+1. Open EarnStationBD-Test → Authentication → Providers → Google.
+2. Enable Google and enter the Web Client ID and Client Secret from Google Cloud.
+3. In Authentication → URL Configuration, add the exact recovery callback URL based on the Cloudflare Preview URL: append `/auth.html?recover=google` to that preview origin. Do not use the older PR #12 preview hostname or add production URLs for this test.
+4. Confirm the Test Project has the existing `profiles` phone-read policy for an authenticated user to read their own profile.
 
-1. Configure Custom SMTP and the Reset Password template above.
-2. Deploy this branch to a Cloudflare Pages Preview.
-3. Request a reset for an existing test account.
-4. Confirm the email contains a six-digit code, not a reset link.
-5. Enter the code on the preview page.
-6. Confirm the registered phone check appears, then set a new password.
-7. Sign out and verify login works with the new password; verify the old password fails.
+## Test checklist
 
-Production remains unchanged until the pull request is reviewed and explicitly merged.
+- Use an existing, email-confirmed test account with a profile phone.
+- Request recovery and enter its registered Gmail + phone.
+- Choose the same Gmail in Google OAuth.
+- Wrong Google Gmail must not proceed.
+- Correct Gmail but wrong phone must not proceed.
+- Correct Gmail + matching profile phone should show new-password fields.
+- Set password, verify sign-out, then log in using the new password.
+- Confirm no OTP email or SMS is sent.
+- Do not merge this branch or change production until testing is approved.
+
+## Limitations and safeguards
+
+- Google OAuth must be enabled/configured in the Test Project before this feature works.
+- A Google account with no access to its Gmail cannot use this recovery path.
+- Phone matching does not prove SIM possession.
+- Do not add a Supabase service-role/secret key to frontend files.

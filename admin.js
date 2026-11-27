@@ -31,7 +31,7 @@
     const [summary,allocations,history]=await Promise.all([
       client.rpc("admin_get_owner_wallet_summary"),
       client.rpc("admin_list_owner_allocations"),
-      client.from("owner_wallet_withdrawals").select("id,amount,payout_method,payment_transaction_id,note,created_at").order("created_at",{ascending:false}).limit(100)
+      client.rpc("admin_list_owner_withdrawals")
     ]);
     if(summary.error)throw summary.error;if(allocations.error)throw allocations.error;if(history.error)throw history.error;
     const s=Array.isArray(summary.data)?summary.data[0]:summary.data;
@@ -152,7 +152,34 @@
     });
   }
 
-async function loadOffers(){
+async function loadBackupAdminPanel(){
+    const status=$("backup-admin-status"),activate=$("activate-backup-admin"),recover=$("recover-primary-admin");
+    activate.hidden=true;recover.hidden=true;status.textContent="Backup Admin-এর অবস্থা যাচাই হচ্ছে...";
+    const {data,error}=await client.rpc("admin_get_backup_admin_status");if(error)throw error;
+    const row=Array.isArray(data)?data[0]:data;if(!row)throw new Error("Backup Admin-এর অবস্থা পাওয়া যায়নি।");
+    if(!row.registered)status.textContent="এই Gmail দিয়ে এখনো Test Auth-এ নিবন্ধন করা হয়নি। আগে mdasifsorkar1414@gmail.com দিয়ে সদস্য হিসেবে নিবন্ধন ও ইমেইল যাচাই করুন।";
+    else if(!row.email_confirmed)status.textContent="Backup Gmail নিবন্ধিত, কিন্তু ইমেইল এখনো যাচাই হয়নি। আগে ইনবক্স থেকে ইমেইল নিশ্চিত করুন।";
+    else if(row.profile_role==="admin"&&row.account_status==="active")status.textContent="Backup Admin সক্রিয় আছে। Primary Admin-এর জরুরি পুনরুদ্ধার সুবিধা প্রস্তুত।";
+    else status.textContent="Backup Gmail যাচাইকৃত; এখনো Admin হিসেবে সক্রিয় নয়।";
+    activate.hidden=!row.can_activate||(row.profile_role==="admin"&&row.account_status==="active");
+    recover.hidden=!row.can_recover_primary;
+  }
+  $("activate-backup-admin").addEventListener("click",async()=>{
+    if(!confirm("mdasifsorkar1414@gmail.com-কে Backup Admin হিসেবে সক্রিয় করবেন? তিনি পূর্ণ Admin ক্ষমতা পাবেন।"))return;
+    $("activate-backup-admin").disabled=true;
+    try{const {error}=await client.rpc("admin_activate_backup_admin");if(error)throw error;message("Backup Admin সক্রিয় হয়েছে।");await loadBackupAdminPanel();}
+    catch(e){message(e.message||"Backup Admin সক্রিয় করা যায়নি।",true);await loadBackupAdminPanel().catch(()=>{});}
+    finally{$("activate-backup-admin").disabled=false;}
+  });
+  $("recover-primary-admin").addEventListener("click",async()=>{
+    if(!confirm("Primary Admin mdasifsorkar64@gmail.com-এর ভূমিকা Admin এবং অবস্থা Active করা হবে। এগিয়ে যাবেন?"))return;
+    $("recover-primary-admin").disabled=true;
+    try{const {error}=await client.rpc("admin_recover_primary_admin");if(error)throw error;message("Primary Admin পুনরুদ্ধার হয়েছে। এখন Primary Admin-কে নতুন করে লগইন করতে হবে।");await loadBackupAdminPanel();}
+    catch(e){message(e.message||"Primary Admin পুনরুদ্ধার করা যায়নি।",true);}
+    finally{$("recover-primary-admin").disabled=false;}
+  });
+
+  async function loadOffers(){
     $("offers-table").textContent="লোড হচ্ছে...";
     const {data,error}=await client.from("offers").select("id,title,partner_name,status,destination_url,created_at").order("created_at",{ascending:false}).limit(100);if(error)throw error;
     const root=$("offers-table");root.replaceChildren();$("stat-offers").textContent=data.length;
@@ -172,46 +199,84 @@ async function loadOffers(){
       const actions=el("div","admin-row-actions");if(item.status==="pending"){actions.append(button("অনুমোদন",()=>reviewConversion(item.id,"approved"),"active"),button("বাতিল",()=>reviewConversion(item.id,"rejected"),"rejected"));}row.append(actions);root.append(row);});
   }
   async function reviewConversion(id,decision){if(!confirm(decision==="approved"?"যাচাইকৃত কনভার্সন অনুমোদন করবেন? কমিশন একবার লেজারে যোগ হবে।":"এই কনভার্সন বাতিল করবেন?"))return;message("কনভার্সন পর্যালোচনা হচ্ছে...");const {error}=await client.rpc("admin_review_conversion",{p_conversion_id:id,p_decision:decision,p_note:""});if(error)throw error;message("কনভার্সন পর্যালোচনা সম্পন্ন।");await loadConversions();}
+  async function loadWithdrawalControl(){
+    const status=$("withdrawal-control-status");
+    status.textContent="উত্তোলন নিয়ন্ত্রণ লোড হচ্ছে...";
+    const {data,error}=await client.rpc("admin_get_withdrawal_control");
+    if(error)throw error;
+    const row=Array.isArray(data)?data[0]:data;
+    if(!row)throw new Error("উত্তোলন নিয়ন্ত্রণের তথ্য পাওয়া যায়নি।");
+    $("withdrawals-enabled").checked=!!row.withdrawals_enabled;
+    $("withdrawal-announcement").value=row.withdrawal_announcement||"";
+    status.textContent=row.withdrawals_enabled
+      ?"অবস্থা: চালু — নতুন উত্তোলনের আবেদন গ্রহণের অনুমতি আছে।"
+      :"অবস্থা: বন্ধ — নতুন উত্তোলনের আবেদন গ্রহণ করা হবে না।";
+  }
+  $("withdrawal-control-form").addEventListener("submit",async event=>{
+    event.preventDefault();
+    const enabled=$("withdrawals-enabled").checked;
+    const promptText=enabled
+      ?"সদস্যদের নতুন উত্তোলনের আবেদন গ্রহণ চালু করবেন? মনে রাখবেন, পেমেন্ট পাঠানোর ব্যবস্থা আলাদাভাবে চালু থাকতে হবে।"
+      :"সদস্যদের নতুন উত্তোলনের আবেদন বন্ধ করবেন? আগে জমা থাকা আবেদন অপরিবর্তিত থাকবে।";
+    if(!confirm(promptText))return;
+    $("save-withdrawal-control").disabled=true;
+    try{
+      const announcement=$("withdrawal-announcement").value.trim();
+      if(announcement.length>500)throw new Error("ঘোষণা সর্বোচ্চ ৫০০ অক্ষরের হতে পারবে।");
+      const {error}=await client.rpc("admin_set_withdrawals_enabled",{p_enabled:enabled,p_announcement:announcement});
+      if(error)throw error;
+      await loadWithdrawalControl();
+      message(enabled?"নতুন উত্তোলনের আবেদন গ্রহণ চালু হয়েছে।":"নতুন উত্তোলনের আবেদন গ্রহণ বন্ধ হয়েছে।");
+    }catch(e){
+      $("withdrawal-control-status").textContent=e.message||"উত্তোলন নিয়ন্ত্রণ সংরক্ষণ করা যায়নি।";
+      message(e.message||"উত্তোলন নিয়ন্ত্রণ সংরক্ষণ করা যায়নি।",true);
+      await loadWithdrawalControl().catch(()=>{});
+    }finally{$("save-withdrawal-control").disabled=false;}
+  });
   async function loadWithdrawals(){
-    $("withdrawals-list").textContent="লোড হচ্ছে...";
-    const {data:{session}}=await client.auth.getSession();
-    if(!session) throw new Error("আবার লগইন করুন।");
-    const response=await fetch("http://127.0.0.1:3001/api/admin/withdrawals",{headers:{Authorization:"Bearer "+session.access_token}});
+    await loadWithdrawalControl();
+    const root=$("withdrawals-list");
+    root.textContent="উত্তোলনের আবেদন লোড হচ্ছে...";
+    const {data:{session},error:sessionError}=await client.auth.getSession();
+    if(sessionError)throw sessionError;
+    if(!session)throw new Error("আবার লগইন করুন।");
+    const response=await fetch("/api/admin/withdrawals",{headers:{"Authorization":"Bearer "+session.access_token}});
     const result=await response.json();
-    if(!response.ok) throw new Error(result.error||"উইথড্র তালিকা লোড করা যায়নি।");
-    const data=result.withdrawals||[];
-    const root=$("withdrawals-list");root.replaceChildren();
-    $("stat-withdrawals").textContent=data.filter(x=>["pending","approved"].includes(x.status)).length;
-    if(!data.length){root.textContent="এখনো কোনো উত্তোলনের অনুরোধ নেই।";return;}
-    data.forEach(w=>{
+    if(!response.ok)throw new Error(result.error||"উত্তোলনের তালিকা লোড করা যায়নি।");
+    const withdrawals=Array.isArray(result.withdrawals)?result.withdrawals:[];
+    root.replaceChildren();
+    $("stat-withdrawals").textContent=withdrawals.length.toLocaleString("bn-BD");
+    if(!withdrawals.length){root.textContent="এখনো কোনো উত্তোলনের আবেদন নেই।";return;}
+    withdrawals.forEach(item=>{
       const row=el("div","admin-row"),info=el("div","admin-row-main");
-      const member=w.member||{};
-      info.append(
-        el("b","", (w.is_test?"[TEST] পরীক্ষামূলক · ":"")+money(w.amount)+" · "+(w.payout_method==="bkash"?"বিকাশ":"নগদ")+" · "+statusBn(w.status)),
-        el("small","","সদস্য: "+(member.full_name||"নাম নেই")+" · "+(member.phone||"ফোন নেই")),
-        el("small","","পেমেন্ট নম্বর: "+w.payout_account),
-        el("small","","User ID: "+w.user_id),
-        el("small","","উইথড্রের সময়: "+fmt(w.created_at)+" · শেষ সময়: "+fmt(w.expires_at))
-      );
-      if(w.paid_at) info.append(el("small","","পেমেন্ট সম্পন্ন: "+fmt(w.paid_at)));
-      if(w.payment_transaction_id) info.append(el("small","","Transaction ID: "+w.payment_transaction_id));
-      if(w.refunded_at) info.append(el("small","","টাকা ফেরত: "+fmt(w.refunded_at)));
-      if(w.admin_note) info.append(el("small","","নোট: "+w.admin_note));
-      if(w.is_test) info.append(el("small","","এটি পরীক্ষামূলক অনুরোধ—বাস্তব পেমেন্ট নিষিদ্ধ। ৫ ঘণ্টা পরে স্বয়ংক্রিয়ভাবে REFUNDED হবে।"));
+      const method=item.payout_method==="bkash"?"বিকাশ":"নগদ";
+      const statusLabel=item.is_test?"পরীক্ষামূলক — বাস্তব পেমেন্ট নয়":statusBn(item.status);
+      info.append(el("b","",(item.member?.full_name||"সদস্য")+" · "+money(item.amount)));
+      info.append(el("small","",method+" · "+(item.payout_account||"নম্বর পাওয়া যায়নি")+" · "+statusLabel));
+      info.append(el("small","","আবেদন: "+fmt(item.created_at)));
+      if(item.expires_at&&(item.status==="pending"||item.status==="approved"))info.append(el("small","","মেয়াদ: "+fmt(item.expires_at)));
+      if(item.admin_note)info.append(el("small","","নোট: "+item.admin_note));
+      if(item.payment_transaction_id)info.append(el("small","","Transaction ID: "+item.payment_transaction_id));
+      if(item.paid_at)info.append(el("small","","পেমেন্ট সম্পন্ন: "+fmt(item.paid_at)));
+      if(item.refunded_at)info.append(el("small","","ফেরত: "+fmt(item.refunded_at)));
       row.append(info);
-      if(!w.is_test && ["pending","approved"].includes(w.status)){
-        row.append(button("টাকা পাঠিয়েছি · SUCCESS করুন",async()=>{
-          const transactionId=prompt("বিকাশ/নগদে "+money(w.amount)+" পাঠানোর পর প্রাপ্ত Transaction ID লিখুন:");
+      if(!item.is_test&&["pending","approved"].includes(item.status)){
+        const actions=el("div","admin-row-actions");
+        actions.append(button("পেমেন্ট সম্পন্ন",async()=>{
+          const transactionId=prompt("বাস্তবে পেমেন্ট পাঠানোর পর Transaction ID লিখুন:");
           if(transactionId===null)return;
-          const cleanTransactionId=transactionId.trim();
-          if(cleanTransactionId.length<4||cleanTransactionId.length>100){throw new Error("সঠিক Transaction ID লিখুন (৪–১০০ অক্ষর)।");}
-          if(!confirm("সদস্যকে "+money(w.amount)+" সত্যিই পাঠানো হয়েছে এবং Transaction ID "+cleanTransactionId+" সঠিক? শুধু টাকা পাঠানোর পর SUCCESS করুন।"))return;
-          const {data:{session:active}}=await client.auth.getSession();
-          const res=await fetch("http://127.0.0.1:3001/api/admin/withdrawals/complete",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+active.access_token},body:JSON.stringify({withdrawal_id:w.id,transaction_id:cleanTransactionId})});
-          const out=await res.json();if(!res.ok)throw new Error(out.error||"স্ট্যাটাস আপডেট হয়নি।");
-          message(out.status==="refunded"?"৫ ঘণ্টা পার হয়েছে—টাকা সদস্যকে ফেরত দেওয়া হয়েছে।":"পেমেন্ট SUCCESS হিসেবে সংরক্ষিত হয়েছে।");
+          if(transactionId.trim().length<4||transactionId.trim().length>100){message("৪ থেকে ১০০ অক্ষরের সঠিক Transaction ID লিখুন।",true);return;}
+          if(!confirm("আপনি কি সত্যিই এই সদস্যকে পেমেন্ট পাঠিয়েছেন? শুধু পেমেন্ট পাঠানোর পর নিশ্চিত করুন।"))return;
+          message("পেমেন্টের রেকর্ড যাচাই হচ্ছে...");
+          const {data:{session:activeSession}}=await client.auth.getSession();
+          if(!activeSession)throw new Error("আবার লগইন করুন।");
+          const paid=await fetch("/api/admin/withdrawals",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+activeSession.access_token},body:JSON.stringify({withdrawal_id:item.id,transaction_id:transactionId.trim()})});
+          const paidResult=await paid.json();
+          if(!paid.ok)throw new Error(paidResult.error||"পেমেন্টের রেকর্ড সংরক্ষণ করা যায়নি।");
+          message(paidResult.status==="refunded"?"আবেদনের মেয়াদ শেষ—ব্যালেন্স ফেরতের অবস্থা আপডেট হয়েছে।":"পেমেন্ট সম্পন্ন হিসেবে রেকর্ড হয়েছে।");
           await loadWithdrawals();
         },"active"));
+        row.append(actions);
       }
       root.append(row);
     });
@@ -224,7 +289,9 @@ async function loadOffers(){
   async function loadCommunitySettings(){
     $("community-status").textContent="কমিউনিটি লিংক লোড হচ্ছে...";
     const {data,error}=await client.rpc("admin_get_community_links"); if(error)throw error;
-    $("community-facebook").value=data.facebook_url||""; $("community-telegram").value=data.telegram_url||""; $("community-whatsapp").value=data.whatsapp_url||""; $("community-youtube").value=data.youtube_url||"";
+    const row=Array.isArray(data)?data[0]:data;
+    if(!row)throw new Error("কমিউনিটি লিংক পাওয়া যায়নি।");
+    $("community-facebook").value=row.facebook_url||""; $("community-telegram").value=row.telegram_url||""; $("community-whatsapp").value=row.whatsapp_url||""; $("community-youtube").value=row.youtube_url||"";
     $("community-status").textContent="কমিউনিটি লিংক লোড হয়েছে।";
   }
   $("community-form").addEventListener("submit",async event=>{
@@ -242,7 +309,9 @@ async function loadOffers(){
   async function loadSiteSettings(){
     $("site-status").textContent="সেটিংস লোড হচ্ছে...";
     const {data,error}=await client.rpc("admin_get_site_settings");if(error)throw error;
-    $("site-name").value=data.site_name||"EarnStationBD";$("site-tagline").value=data.site_tagline||"";$("site-announcement").value=data.announcement||"";$("site-contact").value=data.contact_email||"";
+    const row=Array.isArray(data)?data[0]:data;
+    if(!row)throw new Error("ওয়েবসাইট সেটিংস পাওয়া যায়নি।");
+    $("site-name").value=row.site_name||"EarnStationBD";$("site-tagline").value=row.site_tagline||"";$("site-announcement").value=row.announcement||"";$("site-contact").value=row.contact_email||"";
     $("site-status").textContent="ওয়েবসাইট সেটিংস লোড হয়েছে।";
     await loadCommunitySettings();
     const audit=await client.rpc("admin_get_audit_log");if(audit.error)throw audit.error;
@@ -255,9 +324,9 @@ async function loadOffers(){
   }catch(e){$("site-status").textContent=e.message||"সংরক্ষণ করা যায়নি।";message(e.message||"সংরক্ষণ করা যায়নি।",true);}finally{$("save-site").disabled=false;}});
   $("refresh-site").addEventListener("click",()=>loadSiteSettings().catch(e=>message(e.message,true)));
 
-  async function refreshAll(){try{await Promise.all([loadMembers(),loadOffers(),loadConversions(),loadWithdrawals(),loadOwnerWallet(),loadSettings(),loadSiteSettings(),loadReferralSettings()]);message("সব তথ্য আপডেট হয়েছে।");}catch(e){message(e.message||"তথ্য লোড করা যায়নি।",true);}}
+  async function refreshAll(){try{await Promise.all([loadMembers(),loadBackupAdminPanel(),loadOffers(),loadConversions(),loadWithdrawals(),loadOwnerWallet(),loadSettings(),loadSiteSettings(),loadReferralSettings()]);message("সব তথ্য আপডেট হয়েছে।");}catch(e){message(e.message||"তথ্য লোড করা যায়নি।",true);}}
   $("refresh-all").addEventListener("click",refreshAll);
-  (async()=>{try{const {data,error}=await client.auth.getSession();if(error)throw error;if(!data.session){location.replace("auth.html");return;}const {data:profile,error:pe}=await client.from("profiles").select("role").eq("id",data.session.user.id).single();if(pe)throw pe;if(profile?.role!=="admin"){location.replace("dashboard.html");return;}
+  (async()=>{try{const {data,error}=await client.auth.getSession();if(error)throw error;if(!data.session){location.replace("auth.html");return;}const {data:isAdmin,error:adminCheckError}=await client.rpc("is_admin");if(adminCheckError)throw adminCheckError;if(isAdmin!==true){location.replace("dashboard.html");return;}
     $("admin-top").hidden=false;$("admin-content").hidden=false;$("admin-footer").hidden=false;message("অ্যাডমিন যাচাই সফল।");await refreshAll();
   }catch(e){message(e.message||"অ্যাডমিন প্যানেল লোড করা যায়নি।",true);}})();
 })();

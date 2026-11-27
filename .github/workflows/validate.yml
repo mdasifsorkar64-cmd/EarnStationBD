@@ -1,0 +1,76 @@
+name: Validate EarnStationBD
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+    branches:
+      - "**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  javascript-syntax:
+    name: JavaScript syntax check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check all JavaScript files
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            echo "Checking $file"
+            node --check "$file"
+          done < <(find . -type f -name '*.js' -not -path './.git/*' -print0)
+      - name: Test Pages Function security guards
+        run: node --test tests/*.test.mjs
+
+  preview-api-smoke-test:
+    name: Cloudflare Preview API smoke test
+    needs: javascript-syntax
+    if: github.ref == 'refs/heads/fix/test-admin-platform-settings-rpc'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify Preview API bindings and authentication guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://fix-test-admin-platform-sett.earnstationbd.pages.dev"
+          member_status="000"
+          admin_status="000"
+
+          for attempt in {1..18}; do
+            member_status="$(curl --silent --show-error --output /tmp/member-api.json --write-out '%{http_code}' \
+              --request POST "$base/api/withdrawal" \
+              --header "Origin: $base" \
+              --header "Authorization: Bearer invalid-preview-smoke-token" \
+              --header "Content-Type: application/json" \
+              --data '{"method":"bkash","account":"01712345678","amount":150}' || true)"
+
+            admin_status="$(curl --silent --show-error --output /tmp/admin-api.json --write-out '%{http_code}' \
+              --request GET "$base/api/admin/withdrawals" \
+              --header "Origin: $base" \
+              --header "Authorization: Bearer invalid-preview-smoke-token" || true)"
+
+            if [[ "$member_status" == "401" && "$admin_status" == "403" ]]; then
+              echo "Preview APIs deployed; environment bindings are present and invalid sessions are rejected."
+              exit 0
+            fi
+
+            echo "Attempt $attempt: member=$member_status admin=$admin_status"
+            sleep 10
+          done
+
+          echo "Preview API smoke test failed. Expected member=401 and admin=403."
+          echo "A 503 usually indicates missing Preview environment bindings."
+          exit 1

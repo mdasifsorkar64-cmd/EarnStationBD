@@ -191,14 +191,15 @@
     $("profile-email").value = user.email || "";
     const refreshButton = $("dashboard-refresh");
     if (refreshButton) { refreshButton.disabled = true; refreshButton.classList.add("is-loading"); }
-    const [profileResult, ledgerResult, conversionResult, withdrawalResult, financialResult] = await Promise.all([
+    const [profileResult, ledgerResult, conversionResult, withdrawalResult, financialResult, withdrawalNoticeResult] = await Promise.all([
       client.from("profiles").select("full_name,phone,created_at,role,account_status").eq("id", user.id).maybeSingle(),
       client.from("ledger_entries").select("id,entry_type,amount,description,created_at,is_test,withdrawal_id").eq("user_id", user.id).order("created_at", {ascending:false}).limit(50),
       client.from("partner_conversions").select("id,partner_name,commission_amount,status,received_at").eq("user_id", user.id).order("received_at", {ascending:false}).limit(50),
       client.from("withdrawal_requests").select("id,amount,payout_method,status,admin_note,created_at,expires_at,paid_at,refunded_at,is_test").eq("user_id", user.id).order("created_at", {ascending:false}).limit(30),
-      client.rpc("get_my_financial_summary")
+      client.rpc("get_my_financial_summary"),
+      client.rpc("get_withdrawal_notice")
     ]);
-    const failed = [profileResult,ledgerResult,conversionResult,withdrawalResult,financialResult].find(result => result.error);
+    const failed = [profileResult,ledgerResult,conversionResult,withdrawalResult,financialResult,withdrawalNoticeResult].find(result => result.error);
     if (failed) throw failed.error;
 
     const profile = profileResult.data;
@@ -206,11 +207,11 @@
     if (profile.account_status === "suspended") { await client.auth.signOut(); window.location.replace("auth.html?suspended=1"); throw new Error("এই অ্যাকাউন্টটি সাময়িকভাবে স্থগিত।"); }
     $("profile-name").value = profile.full_name || "";
     $("profile-phone").value = profile.phone || "";
-    profileLocked = profile.account_status === "active" || profile.role !== "member";
-    $("profile-name").disabled = profileLocked;
-    $("profile-phone").disabled = profileLocked;
-    profileSave.hidden = profileLocked;
-    if (profileLocked) setMessage("অ্যাকাউন্ট সক্রিয় হওয়ার পর নাম, ফোন নম্বরসহ কোনো প্রোফাইল তথ্য পরিবর্তন করা যাবে না।", "");
+    profileLocked = true;
+    $("profile-name").disabled = true;
+    $("profile-phone").disabled = true;
+    profileSave.hidden = true;
+    setMessage("নিরাপত্তার জন্য নিবন্ধনের পর নাম ও ফোন নম্বর পরিবর্তন করা যায় না। ভুল তথ্য থাকলে অ্যাডমিনের সঙ্গে যোগাযোগ করুন।", "");
     const adminLink = $("admin-nav-link");
     if (adminLink) adminLink.hidden = profile.role !== "admin";
     const displayName = profile.full_name || "সদস্য";
@@ -221,6 +222,23 @@
     const conversions = conversionResult.data || [];
     const withdrawals = withdrawalResult.data || [];
     latestWithdrawals = withdrawals;
+    const withdrawalNotice = Array.isArray(withdrawalNoticeResult.data) ? withdrawalNoticeResult.data[0] : withdrawalNoticeResult.data;
+    const noticeBox = $("withdrawal-announcement");
+    const withdrawalEnabled = !!withdrawalNotice?.withdrawals_enabled;
+    const announcement = (withdrawalNotice?.withdrawal_announcement || "").trim();
+    if (noticeBox) {
+      noticeBox.hidden = withdrawalEnabled && !announcement;
+      noticeBox.textContent = announcement || (withdrawalEnabled ? "" : "বর্তমানে নতুন উত্তোলনের আবেদন গ্রহণ বন্ধ রয়েছে।");
+      noticeBox.classList.toggle("is-paused", !withdrawalEnabled);
+    }
+    const withdrawForm = $("withdraw-form");
+    if (withdrawForm) {
+      withdrawForm.querySelectorAll("input,select,button").forEach(control => { control.disabled = !withdrawalEnabled; });
+      if (!withdrawalEnabled) {
+        const msg = $("withdraw-message");
+        if (msg) { msg.textContent = "উত্তোলন সেবা সাময়িকভাবে বন্ধ।"; msg.className = "withdraw-message error"; }
+      }
+    }
     const financial = Array.isArray(financialResult.data) ? financialResult.data[0] : financialResult.data;
     if (!financial) throw new Error("আপনার আয়ের হিসাব পাওয়া যায়নি। Supabase-এ financial_accounting_fix.sql চালানো হয়েছে কি না যাচাই করুন।");
     const approved = conversions.filter(item => item.status === "approved").reduce((sum,item) => sum + Number(item.commission_amount),0);
@@ -386,7 +404,7 @@
   profileForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     if (!currentUser) return;
-    if (profileLocked) return setMessage("অ্যাকাউন্ট সক্রিয় হওয়ার পর প্রোফাইল তথ্য পরিবর্তন করা যাবে না।", "error");
+    if (profileLocked) return setMessage("নিরাপত্তার জন্য নিবন্ধনের পর প্রোফাইল তথ্য পরিবর্তন করা যায় না। অ্যাডমিনের সঙ্গে যোগাযোগ করুন।", "error");
     const fullName = $("profile-name").value.trim();
     const phone = $("profile-phone").value.trim();
     if (!fullName) return setMessage("আপনার পূর্ণ নাম লিখুন।","error");
@@ -443,7 +461,7 @@
     submit.disabled=true; submit.textContent="অনুরোধ পাঠানো হচ্ছে...";
     withdrawMessage("");
     try {
-      const response=await fetch("http://127.0.0.1:3001/api/withdrawal",{
+      const response=await fetch("/api/withdrawal",{
         method:"POST",
         headers:{"Content-Type":"application/json","Authorization":"Bearer "+session.access_token},
         body:JSON.stringify({method,account,amount})
