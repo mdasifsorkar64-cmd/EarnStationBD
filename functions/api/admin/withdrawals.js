@@ -26,14 +26,16 @@ function reply(request, status, payload) {
 async function requireAdmin(base, apiKey, authorization) {
   const userResponse = await fetch(base + "/auth/v1/user", { headers: { apikey: apiKey, Authorization: authorization } });
   if (!userResponse.ok) throw new Error("আবার লগইন করুন।");
-  const user = await userResponse.json();
-  const profileResponse = await fetch(base + "/rest/v1/profiles?id=eq." + encodeURIComponent(user.id) + "&select=role,account_status", {
-    headers: { apikey: apiKey, Authorization: authorization }
+
+  // Use the database's canonical admin check, including the email allowlist.
+  const adminResponse = await fetch(base + "/rest/v1/rpc/is_admin", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", apikey: apiKey, Authorization: authorization },
+    body: "{}"
   });
-  const profiles = await profileResponse.json();
-  if (!profileResponse.ok || !profiles[0] || profiles[0].role !== "admin" || profiles[0].account_status !== "active") {
-    throw new Error("সক্রিয় অ্যাডমিন অনুমতি নেই।");
-  }
+  if (!adminResponse.ok) throw new Error("অ্যাডমিন অনুমতি যাচাই করা যায়নি।");
+  const isAdmin = await adminResponse.json();
+  if (isAdmin !== true) throw new Error("সক্রিয় অ্যাডমিন অনুমতি নেই।");
 }
 
 export async function onRequest({ request, env }) {
@@ -43,12 +45,11 @@ export async function onRequest({ request, env }) {
   if (origin && !allowedOrigin(origin, request.url)) return reply(request, 403, { error: "এই ওয়েবসাইট থেকে অনুরোধ অনুমোদিত নয়।" });
 
   const authorization = request.headers.get("Authorization") || "";
-  if (!/^Bearer\s+\S+$/i.test(authorization)) return reply(request, 401, { error: "আবার লগইন করুন।" });
+  if (!/^Bearer\\s+\\S+$/i.test(authorization)) return reply(request, 401, { error: "আবার লগইন করুন।" });
   const { base, apiKey } = getSupabaseConfig(request, env);
   const encryptionKey = env.PAYOUT_ENCRYPTION_KEY;
   if (!base || !apiKey || !encryptionKey) return reply(request, 503, { error: "সার্ভারের নিরাপদ কনফিগারেশন এখনো সম্পূর্ণ নয়।" });
   try { const parsed = new URL(base); if (parsed.protocol !== "https:" || !parsed.hostname.endsWith(".supabase.co")) throw new Error(); } catch { return reply(request, 503, { error: "Supabase URL কনফিগারেশন সঠিক নয়।" }); }
-
 
   try {
     await requireAdmin(base, apiKey, authorization);
