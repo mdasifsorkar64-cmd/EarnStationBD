@@ -1,4 +1,5 @@
 import { encryptPayoutAccount } from "../_shared/payout-crypto.js";
+import { getSupabaseConfig } from "../_shared/supabase-config.js";
 
 const allowedOrigin = (origin, requestUrl) => {
   if (!origin) return null;
@@ -36,8 +37,7 @@ export async function onRequest({ request, env }) {
   const authorization = request.headers.get("Authorization") || "";
   if (!/^Bearer\s+\S+$/i.test(authorization)) return response(request, 401, { error: "আবার লগইন করুন।" });
 
-  const supabaseUrl = String(env.SUPABASE_URL || "").replace(/\/$/, "");
-  const supabaseKey = env.SUPABASE_PUBLISHABLE_KEY || env.SUPABASE_ANON_KEY;
+  const { base: supabaseUrl, apiKey: supabaseKey } = getSupabaseConfig(request, env);
   const encryptionKey = env.PAYOUT_ENCRYPTION_KEY;
   if (!supabaseUrl || !supabaseKey || !encryptionKey) return response(request, 503, { error: "সার্ভারের নিরাপদ কনফিগারেশন এখনো সম্পূর্ণ নয়।" });
   try { const parsed = new URL(supabaseUrl); if (parsed.protocol !== "https:" || !parsed.hostname.endsWith(".supabase.co")) throw new Error(); } catch { return response(request, 503, { error: "Supabase URL কনফিগারেশন সঠিক নয়।" }); }
