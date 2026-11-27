@@ -102,7 +102,5 @@
       submit.disabled = false;
     }
   });
-  client.auth.getSession().then(({ data }) => {
-    if (data.session) window.location.href = "dashboard.html";
-  });
+  client.auth.getSession().then(({ data }) => {\n    if (new URLSearchParams(location.search).has("recover-google")) return;\n    if (data.session) window.location.href = "dashboard.html";\n  });
 })();
