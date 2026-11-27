@@ -64,6 +64,20 @@
         <p id="profile-message" class="profile-message" role="status" aria-live="polite"></p>
       </form>
     </section>
+    <section class="panel profile-panel" id="password-change-panel">
+      <div class="panel-head"><h2>🔐 পাসওয়ার্ড পরিবর্তন</h2><span class="panel-note">নিরাপত্তা</span></div>
+      <form id="password-change-form" class="profile-form" autocomplete="on">
+        <label for="current-password">বর্তমান পাসওয়ার্ড</label>
+        <input id="current-password" type="password" autocomplete="current-password" minlength="8" required>
+        <label for="new-password">নতুন পাসওয়ার্ড</label>
+        <input id="new-password" type="password" autocomplete="new-password" minlength="8" required>
+        <label for="confirm-new-password">নতুন পাসওয়ার্ড নিশ্চিত করুন</label>
+        <input id="confirm-new-password" type="password" autocomplete="new-password" minlength="8" required>
+        <button class="profile-save" id="password-change-submit" type="submit">পাসওয়ার্ড পরিবর্তন করুন</button>
+        <p id="password-change-message" class="profile-message" role="status" aria-live="polite"></p>
+      </form>
+      <p class="panel-footnote">বর্তমান পাসওয়ার্ড যাচাই করার পর নতুন পাসওয়ার্ড সংরক্ষণ হবে।</p>
+    </section>
   </section>
 </main>
 <footer class="dash-footer">Power by : MD Asif Sorkar <span>♥ EarnStationBD ♥</span></footer>
