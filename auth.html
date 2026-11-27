@@ -68,7 +68,24 @@
         <div class="form-options" id="login-options"><label class="remember-option"><input type="checkbox" id="remember-me" checked><span>আমাকে মনে রাখুন</span></label><span class="secure-note"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg> নিরাপদ লগইন</span></div>
         <button class="button auth-submit" id="submit-button" type="submit"><span>লগইন করুন</span><svg viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button>
       </form>
-      <p id="auth-message" class="auth-message" role="status" aria-live="polite"></p>
+<button type="button" id="forgot-password-link" class="auth-switch">পাসওয়ার্ড ভুলে গেছেন?</button>
+<section id="recovery-panel" hidden style="margin-top:18px;text-align:left">
+<h3 id="recovery-title">ইমেইলে OTP দিয়ে পাসওয়ার্ড পুনরুদ্ধার</h3>
+<p id="recovery-help">নিবন্ধিত Gmail ও অ্যাকাউন্টে সংরক্ষিত ফোন নম্বর লিখুন। ইমেইলে ৬ সংখ্যার OTP যাবে; SMS লাগবে না।</p>
+<div class="field-group" id="recovery-start">
+<label for="recovery-email">নিবন্ধিত Gmail</label><input id="recovery-email" type="email" autocomplete="email" placeholder="আপনার Gmail">
+<label for="recovery-phone">অ্যাকাউন্টে সংরক্ষিত ফোন নম্বর</label><input id="recovery-phone" type="tel" inputmode="numeric" maxlength="11" placeholder="01XXXXXXXXX">
+</div>
+<div class="field-group" id="recovery-otp-panel" hidden>
+<label for="recovery-otp">ইমেইলে আসা ৬ সংখ্যার OTP</label><input id="recovery-otp" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="123456">
+</div>
+<div class="field-group" id="recovery-new" hidden>
+<label for="recovery-password">নতুন পাসওয়ার্ড</label><input id="recovery-password" type="password" minlength="8" autocomplete="new-password">
+<label for="recovery-confirm">নতুন পাসওয়ার্ড নিশ্চিত করুন</label><input id="recovery-confirm" type="password" minlength="8" autocomplete="new-password">
+</div>
+<button type="button" id="recovery-action" class="button auth-submit">ইমেইলে OTP পাঠান</button>
+<button type="button" id="recovery-cancel" class="auth-switch">লগইনে ফিরুন</button>
+</section><p id="auth-message" class="auth-message" role="status" aria-live="polite"></p>
       <p class="auth-note">নিবন্ধনের পর আপনার ইমেইলে যাচাইকরণ লিংক পাঠানো হবে। ইমেইল যাচাই সম্পন্ন হলে লগইন করতে পারবেন।</p>
       <p class="auth-switch" id="auth-switch">নতুন সদস্য? <button type="button" id="switch-to-signup">এখনই নিবন্ধন করুন</button></p>
     </section>
@@ -77,5 +94,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <script src="auth.js"></script>
+  <script src="auth-recovery.js"></script>
 </body>
 </html>
