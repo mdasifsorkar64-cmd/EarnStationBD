@@ -46,11 +46,13 @@ async function requireAdmin(authorization) {
   });
   if (!userRes.ok) throw new Error("আবার লগইন করুন।");
   const user = await userRes.json();
-  const roleRes = await fetch(BASE() + "/rest/v1/profiles?id=eq." + encodeURIComponent(user.id) + "&select=role", {
+  const roleRes = await fetch(BASE() + "/rest/v1/profiles?id=eq." + encodeURIComponent(user.id) + "&select=role,account_status", {
     headers: { apikey: SUPABASE_ANON_KEY, Authorization: authorization }
   });
   const roles = await roleRes.json();
-  if (!roleRes.ok || !roles[0] || roles[0].role !== "admin") throw new Error("অ্যাডমিন অনুমতি নেই।");
+  if (!roleRes.ok || !roles[0] || roles[0].role !== "admin" || roles[0].account_status !== "active") {
+    throw new Error("সক্রিয় অ্যাডমিন অনুমতি নেই।");
+  }
   return user;
 }
 async function readBody(req, limit = 4096) {
