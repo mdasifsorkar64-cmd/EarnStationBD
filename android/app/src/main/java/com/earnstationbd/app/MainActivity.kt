@@ -21,6 +21,12 @@ import android.widget.Button
 import android.widget.LinearLayout
 import android.graphics.Color
 import android.view.Gravity
+import android.widget.ImageView
+import android.view.animation.AlphaAnimation
+import android.view.animation.Animation
+import android.view.animation.AnimationSet
+import android.view.animation.ScaleAnimation
+import android.view.animation.DecelerateInterpolator
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 
@@ -54,6 +60,7 @@ class MainActivity : AppCompatActivity() {
         progress.max = 100
         root.addView(webView, FrameLayout.LayoutParams(-1, -1))
         root.addView(progress, FrameLayout.LayoutParams(-1, dp(3), Gravity.TOP))
+        showAnimatedSplash()
 
         CookieManager.getInstance().setAcceptCookie(true)
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true)
@@ -118,6 +125,76 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         })
+    }
+
+    private fun showAnimatedSplash() {
+        val splash = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setBackgroundColor(Color.WHITE)
+            setPadding(dp(24), dp(24), dp(24), dp(24))
+        }
+
+        val logo = ImageView(this).apply {
+            setImageResource(R.mipmap.ic_launcher)
+            scaleType = ImageView.ScaleType.FIT_CENTER
+        }
+        splash.addView(logo, LinearLayout.LayoutParams(dp(112), dp(112)))
+
+        val appName = TextView(this).apply {
+            text = "EarnStationBD"
+            textSize = 30f
+            typeface = android.graphics.Typeface.create("sans-serif", android.graphics.Typeface.BOLD)
+            setTextColor(Color.rgb(16, 27, 85))
+            gravity = Gravity.CENTER
+            setPadding(0, dp(20), 0, dp(8))
+        }
+        splash.addView(appName)
+
+        val credit = TextView(this).apply {
+            text = "Power by MD ASIF SORKAR"
+            textSize = 14f
+            letterSpacing = 0.08f
+            setTextColor(Color.rgb(90, 98, 120))
+            gravity = Gravity.CENTER
+            setPadding(0, dp(8), 0, 0)
+        }
+        splash.addView(credit)
+
+        root.addView(splash, FrameLayout.LayoutParams(-1, -1))
+
+        fun animateIn(view: View, delay: Long) {
+            view.visibility = View.INVISIBLE
+            view.postDelayed({
+                view.visibility = View.VISIBLE
+                val fade = AlphaAnimation(0f, 1f).apply {
+                    duration = 650
+                    interpolator = DecelerateInterpolator()
+                }
+                val scale = ScaleAnimation(
+                    0.82f, 1f, 0.82f, 1f,
+                    Animation.RELATIVE_TO_SELF, 0.5f,
+                    Animation.RELATIVE_TO_SELF, 0.5f
+                ).apply {
+                    duration = 650
+                    interpolator = DecelerateInterpolator()
+                }
+                AnimationSet(true).apply {
+                    addAnimation(fade)
+                    addAnimation(scale)
+                    fillAfter = true
+                }.also { view.startAnimation(it) }
+            }, delay)
+        }
+
+        animateIn(logo, 100)
+        animateIn(appName, 500)
+        animateIn(credit, 1050)
+        splash.postDelayed({
+            splash.animate().alpha(0f).setDuration(350).withEndAction {
+                root.removeView(splash)
+            }.start()
+        }, 2600)
     }
 
     private fun showOffline() {
