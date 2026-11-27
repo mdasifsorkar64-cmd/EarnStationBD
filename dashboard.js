@@ -502,6 +502,25 @@
     finally { button.disabled = false; }
   });
 
+  const passwordSecurityToggle = $("password-security-toggle");
+  const passwordSecurityContent = $("password-security-content");
+  passwordSecurityToggle.addEventListener("click", () => {
+    const isOpening = passwordSecurityContent.hidden;
+    passwordSecurityContent.hidden = !isOpening;
+    passwordSecurityToggle.setAttribute("aria-expanded", String(isOpening));
+    $("password-security-toggle-label").textContent = isOpening ? "বন্ধ করুন" : "খুলুন";
+  });
+
+  document.querySelectorAll(".password-visibility-toggle").forEach((toggle) => {
+    toggle.addEventListener("click", () => {
+      const field = $(toggle.dataset.target);
+      const show = field.type === "password";
+      field.type = show ? "text" : "password";
+      toggle.textContent = show ? "লুকান" : "দেখান";
+      toggle.setAttribute("aria-pressed", String(show));
+    });
+  });
+
   const withdrawForm = $("withdraw-form");
   const withdrawMessage = (text,type="") => { $("withdraw-message").textContent=text; $("withdraw-message").className="withdraw-message "+type; };
   withdrawForm.addEventListener("submit", async (event) => {
