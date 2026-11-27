@@ -406,6 +406,36 @@
     }
   });
 
+  const passwordChangeForm = $("password-change-form");
+  passwordChangeForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const currentPassword = $("current-password").value;
+    const newPassword = $("new-password").value;
+    const confirmPassword = $("confirm-new-password").value;
+    const message = $("password-change-message");
+    const button = $("password-change-submit");
+    const showPasswordMessage = (value, type="") => { message.textContent = value; message.className = "profile-message " + type; };
+    if (!currentUser?.email) return showPasswordMessage("অ্যাকাউন্টের ইমেইল পাওয়া যায়নি। আবার লগইন করুন।", "error");
+    if (!currentPassword) return showPasswordMessage("বর্তমান পাসওয়ার্ড লিখুন।", "error");
+    if (newPassword.length < 8) return showPasswordMessage("নতুন পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে।", "error");
+    if (newPassword !== confirmPassword) return showPasswordMessage("নতুন পাসওয়ার্ড দুটি মিলছে না।", "error");
+    if (currentPassword === newPassword) return showPasswordMessage("নতুন পাসওয়ার্ডটি বর্তমান পাসওয়ার্ড থেকে আলাদা হতে হবে।", "error");
+    button.disabled = true; button.textContent = "যাচাই হচ্ছে..."; showPasswordMessage("");
+    try {
+      const { error: verifyError } = await client.auth.signInWithPassword({ email: currentUser.email, password: currentPassword });
+      if (verifyError) throw new Error("বর্তমান পাসওয়ার্ড সঠিক নয়। আবার পরীক্ষা করুন।");
+      button.textContent = "সংরক্ষণ হচ্ছে...";
+      const { error: updateError } = await client.auth.updateUser({ password: newPassword });
+      if (updateError) throw updateError;
+      passwordChangeForm.reset();
+      showPasswordMessage("পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে। নতুন পাসওয়ার্ড দিয়ে পরবর্তী লগইন করতে পারবেন।", "success");
+    } catch (error) {
+      showPasswordMessage(error.message || "পাসওয়ার্ড পরিবর্তন করা যায়নি। আবার চেষ্টা করুন।", "error");
+    } finally {
+      button.disabled = false; button.textContent = "পাসওয়ার্ড পরিবর্তন করুন";
+    }
+  });
+
   const withdrawForm = $("withdraw-form");
   const withdrawMessage = (text,type="") => { $("withdraw-message").textContent=text; $("withdraw-message").className="withdraw-message "+type; };
   withdrawForm.addEventListener("submit", async (event) => {
