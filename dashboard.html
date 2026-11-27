@@ -63,7 +63,46 @@
         <button class="profile-save" id="profile-save" type="submit">পরিবর্তন সংরক্ষণ করুন</button>
         <p id="profile-message" class="profile-message" role="status" aria-live="polite"></p>
       </form>
+<section class="panel profile-panel" id="password-change-panel">
+      <button type="button" id="password-security-toggle" class="auth-switch" aria-expanded="false" aria-controls="password-security-content">🔐 পাসওয়ার্ড ও নিরাপত্তা <span id="password-security-toggle-label">খুলুন</span></button>
+      <div id="password-security-content" hidden>
+      <div class="panel-head"><h2>পাসওয়ার্ড পরিবর্তন</h2><span class="panel-note">নিরাপত্তা</span></div>
+      <form id="password-change-form" class="profile-form" autocomplete="on">
+        <label for="current-password">বর্তমান পাসওয়ার্ড</label>
+        <div style="display:flex;gap:8px;align-items:center"><input id="current-password" type="password" autocomplete="current-password" minlength="8" required style="flex:1;min-width:0"><button type="button" class="secondary-button password-visibility-toggle" data-target="current-password" aria-pressed="false">দেখান</button></div>
+        <label for="new-password">নতুন পাসওয়ার্ড</label>
+        <div style="display:flex;gap:8px;align-items:center"><input id="new-password" type="password" autocomplete="new-password" minlength="8" required style="flex:1;min-width:0"><button type="button" class="secondary-button password-visibility-toggle" data-target="new-password" aria-pressed="false">দেখান</button></div>
+        <label for="confirm-new-password">নতুন পাসওয়ার্ড নিশ্চিত করুন</label>
+        <div style="display:flex;gap:8px;align-items:center"><input id="confirm-new-password" type="password" autocomplete="new-password" minlength="8" required style="flex:1;min-width:0"><button type="button" class="secondary-button password-visibility-toggle" data-target="confirm-new-password" aria-pressed="false">দেখান</button></div>
+        <button class="profile-save" id="password-change-submit" type="submit">পাসওয়ার্ড পরিবর্তন করুন</button>
+        <p id="password-change-message" class="profile-message" role="status" aria-live="polite"></p>
+      </form>
+      <button type="button" id="forgot-current-password" class="auth-switch" style="margin-top:12px">বর্তমান পাসওয়ার্ড মনে নেই? পাসওয়ার্ড ভুলে গেছেন</button>
+      <div id="profile-recovery-panel" hidden class="profile-form" style="margin-top:14px">
+        <p class="panel-footnote">আপনার নিবন্ধিত ইমেইলে ৬ সংখ্যার OTP পাঠানো হবে। SMS লাগবে না।</p>
+        <label for="profile-recovery-email">নিবন্ধিত ইমেইল</label>
+        <input id="profile-recovery-email" type="email" autocomplete="email" readonly>
+        <label for="profile-recovery-phone">অ্যাকাউন্টে সংরক্ষিত ফোন নম্বর</label>
+        <input id="profile-recovery-phone" type="tel" inputmode="numeric" maxlength="11" placeholder="01XXXXXXXXX">
+        <button type="button" class="profile-save" id="profile-recovery-send">ইমেইলে OTP পাঠান</button>
+        <div id="profile-recovery-otp-area" hidden>
+          <label for="profile-recovery-otp">ইমেইলে আসা ৬ সংখ্যার OTP</label>
+          <input id="profile-recovery-otp" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code">
+          <button type="button" class="profile-save" id="profile-recovery-verify">OTP যাচাই করুন</button>
+        </div>
+        <div id="profile-recovery-password-area" hidden>
+          <label for="profile-recovery-new-password">নতুন পাসওয়ার্ড</label>
+          <div style="display:flex;gap:8px;align-items:center"><input id="profile-recovery-new-password" type="password" autocomplete="new-password" minlength="8" style="flex:1;min-width:0"><button type="button" class="secondary-button password-visibility-toggle" data-target="profile-recovery-new-password" aria-pressed="false">দেখান</button></div>
+          <label for="profile-recovery-confirm-password">নতুন পাসওয়ার্ড নিশ্চিত করুন</label>
+          <div style="display:flex;gap:8px;align-items:center"><input id="profile-recovery-confirm-password" type="password" autocomplete="new-password" minlength="8" style="flex:1;min-width:0"><button type="button" class="secondary-button password-visibility-toggle" data-target="profile-recovery-confirm-password" aria-pressed="false">দেখান</button></div>
+          <button type="button" class="profile-save" id="profile-recovery-save">নতুন পাসওয়ার্ড সংরক্ষণ</button>
+        </div>
+        <p id="profile-recovery-message" class="profile-message" role="status" aria-live="polite"></p>
+      </div>
+      <p class="panel-footnote">বর্তমান পাসওয়ার্ড জানা থাকলে সেটি যাচাই করে পরিবর্তন করুন। মনে না থাকলে ইমেইল OTP ব্যবহার করুন।</p>
+      </div>
     </section>
+        </section>
   </section>
 </main>
 <footer class="dash-footer">Power by : MD Asif Sorkar <span>♥ EarnStationBD ♥</span></footer>
