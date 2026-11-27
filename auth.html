@@ -53,7 +53,7 @@
         </div>
         <div class="field-group signup-only" id="referral-group" hidden><label for="referral-code">রেফারেল কোড (ঐচ্ছিক)</label><div class="input-wrap"><input id="referral-code" type="text" maxlength="10" autocomplete="off" placeholder="বন্ধুর রেফারেল কোড"></div><p class="field-hint">কোনো সদস্যের আমন্ত্রণে এলে কোডটি লিখুন।</p></div>
         <div class="field-group">
-          <label for="email">ইমেইল ঠিকানা</label>
+          <label for="email">ইমেইল ঠিকানা <span aria-hidden="true">*</span></label>
           <div class="input-wrap"><svg class="field-icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg><input id="email" type="email" autocomplete="email" required placeholder="আপনার ইমেইল ঠিকানা"></div>
         </div>
         <div class="field-group">
@@ -65,9 +65,26 @@
           <div class="input-wrap"><svg class="field-icon" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><input id="confirm-password" type="password" autocomplete="new-password" minlength="8" placeholder="আবার পাসওয়ার্ড লিখুন"><button class="password-toggle" type="button" data-toggle="confirm-password" aria-label="কনফার্ম পাসওয়ার্ড দেখান"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
           <p class="field-hint">নিশ্চিত করুন দুটি পাসওয়ার্ড একই।</p>
         </div>
+        <div class="field-group signup-only" id="terms-group" hidden>
+          <label class="terms-consent" for="terms-accepted">
+            <input id="terms-accepted" type="checkbox" required>
+            <span>আমি <a href="terms.html" target="_blank" rel="noopener noreferrer">ব্যবহারের শর্তাবলি</a> এবং <a href="privacy.html" target="_blank" rel="noopener noreferrer">গোপনীয়তা নীতি</a> পড়েছি ও সম্মত আছি।</span>
+          </label>
+        </div>
         <div class="form-options" id="login-options"><label class="remember-option"><input type="checkbox" id="remember-me" checked><span>আমাকে মনে রাখুন</span></label><span class="secure-note"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg> নিরাপদ লগইন</span></div>
         <button class="button auth-submit" id="submit-button" type="submit"><span>লগইন করুন</span><svg viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button>
       </form>
+      <button type="button" id="forgot-password-link" class="auth-switch" style="display:block;margin-top:14px">পাসওয়ার্ড ভুলে গেছেন?</button>
+      <section id="recovery-panel" hidden style="margin-top:18px;text-align:left">
+        <h3 id="recovery-title">পাসওয়ার্ড পুনরুদ্ধার</h3>
+        <p id="recovery-help" class="field-hint">আপনার নিবন্ধিত ইমেইল দিন। পরিচয় যাচাইয়ের জন্য ইমেইলে নিরাপদ লিংক পাঠানো হবে।</p>
+        <div class="field-group" id="recovery-email-group"><label for="recovery-email">ইমেইল ঠিকানা</label><input id="recovery-email" type="email" autocomplete="email" required></div>
+        <div class="field-group" id="recovery-phone-group" hidden><label for="recovery-phone">নিবন্ধিত মোবাইল নম্বর</label><input id="recovery-phone" type="tel" inputmode="numeric" maxlength="11" placeholder="01XXXXXXXXX"></div>
+        <div class="field-group" id="new-password-group" hidden><label for="new-password">নতুন পাসওয়ার্ড</label><input id="new-password" type="password" minlength="8" autocomplete="new-password"></div>
+        <div class="field-group" id="new-password-confirm-group" hidden><label for="new-password-confirm">নতুন পাসওয়ার্ড নিশ্চিত করুন</label><input id="new-password-confirm" type="password" minlength="8" autocomplete="new-password"></div>
+        <button type="button" id="recovery-submit" class="button auth-submit">ইমেইলে রিসেট লিংক পাঠান</button>
+        <button type="button" id="recovery-cancel" class="auth-switch">লগইনে ফিরে যান</button>
+      </section>
       <p id="auth-message" class="auth-message" role="status" aria-live="polite"></p>
       <p class="auth-note">নিবন্ধনের পর আপনার ইমেইলে যাচাইকরণ লিংক পাঠানো হবে। ইমেইল যাচাই সম্পন্ন হলে লগইন করতে পারবেন।</p>
       <p class="auth-switch" id="auth-switch">নতুন সদস্য? <button type="button" id="switch-to-signup">এখনই নিবন্ধন করুন</button></p>
