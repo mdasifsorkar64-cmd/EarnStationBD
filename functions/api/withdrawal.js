@@ -40,6 +40,9 @@ export async function onRequestPost({ request, env }) {
   if (!/^Bearer\s+\S+$/i.test(authorization)) {
     return reply(request, 401, { error: "আবার লগইন করুন।" });
   }
+  if (!/^application\/json(?:\s*;|$)/i.test(request.headers.get("Content-Type") || "")) {
+    return reply(request, 415, { error: "সঠিক JSON তথ্য পাঠান।" });
+  }
 
   try {
     const { base, apiKey } = getSupabaseConfig(env);
@@ -58,6 +61,9 @@ export async function onRequestPost({ request, env }) {
       if (raw.length > 4096) return reply(request, 413, { error: "অনুরোধটি অনেক বড়।" });
       input = JSON.parse(raw);
     } catch {
+      return reply(request, 400, { error: "সঠিক তথ্য পাঠান।" });
+    }
+    if (!input || typeof input !== "object" || Array.isArray(input)) {
       return reply(request, 400, { error: "সঠিক তথ্য পাঠান।" });
     }
 
