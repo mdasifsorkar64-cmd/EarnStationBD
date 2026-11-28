@@ -7,7 +7,6 @@ function allowedOrigin(origin, requestUrl) {
     const url = new URL(origin);
     if (url.protocol !== "https:") return null;
     if (url.origin === new URL(requestUrl).origin) return origin;
-    if (url.hostname === "earnstationbd.pages.dev" || url.hostname.endsWith(".earnstationbd.pages.dev")) return origin;
     return null;
   } catch { return null; }
 }
