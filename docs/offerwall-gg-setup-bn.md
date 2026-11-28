@@ -42,3 +42,8 @@ Cloudflare Pages → earnstationbd → Settings → Variables and Secrets-এ �
 3. একই callback দুইবার পাঠিয়ে duplicate event/credit না হওয়া নিশ্চিত করুন।
 4. Reversal test-এ approved member reward debit হওয়া যাচাই করুন।
 5. সব যাচাই না হওয়া পর্যন্ত Production branch-এ merge করবেন না।
+
+
+## BD Ads Network (শুধু banner)
+
+BD Ads Network-এর কাছ থেকে শুধু সাধারণ banner ad-এর অনুমোদন এসেছে; rewarded view বা server callback নিশ্চিত হয়নি। তাই banner code পাওয়ার আগে কোনো script embed করা হবে না এবং banner impression/click-এর জন্য সদস্যের balance বাড়ানো হবে না। তাদের publisher dashboard থেকে নির্দিষ্ট banner ad tag পাওয়া গেলে সেটি আলাদা, non-rewarded placement হিসেবে যুক্ত করতে হবে।
