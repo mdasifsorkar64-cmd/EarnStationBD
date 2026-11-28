@@ -96,7 +96,7 @@
       document.getElementById("recovery-otp-area").hidden = false;
       recoverySay("আপনার ইমেইলে ৬ সংখ্যার OTP পাঠানো হয়েছে। ইনবক্স ও স্প্যাম ফোল্ডার দেখুন।", "success");
     } catch (error) {
-      recoverySay(error.message || "OTP পাঠানো যায়নি।", "error");
+      recoverySay(window.EarnStationErrors.toBengali(error, "OTP পাঠানো যায়নি।"), "error");
     } finally {
       button.disabled = false;
     }
@@ -119,7 +119,7 @@
       recoverySay("ইমেইল OTP ও সংরক্ষিত ফোন নম্বর মিলেছে। এখন নতুন পাসওয়ার্ড দিন।", "success");
     } catch (error) {
       await client.auth.signOut();
-      recoverySay(error.message || "OTP যাচাই করা যায়নি।", "error");
+      recoverySay(window.EarnStationErrors.toBengali(error, "OTP যাচাই করা যায়নি।"), "error");
     } finally {
       button.disabled = false;
     }
@@ -149,7 +149,7 @@
       showLoginForm();
       setMessage("পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে। নতুন পাসওয়ার্ড দিয়ে লগইন করুন।", "success");
     } catch (error) {
-      recoverySay(error.message || "পাসওয়ার্ড পরিবর্তন করা যায়নি।", "error");
+      recoverySay(window.EarnStationErrors.toBengali(error, "পাসওয়ার্ড পরিবর্তন করা যায়নি।"), "error");
     } finally {
       button.disabled = false;
     }
@@ -202,7 +202,7 @@
         window.location.href = "dashboard.html";
       }
     } catch (error) {
-      setMessage(error.message || "কাজটি সম্পন্ন হয়নি। আবার চেষ্টা করুন।", "error");
+      setMessage(window.EarnStationErrors.toBengali(error, "কাজটি সম্পন্ন হয়নি। আবার চেষ্টা করুন।"), "error");
     } finally {
       submit.disabled = false;
     }
