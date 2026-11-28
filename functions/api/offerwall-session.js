@@ -18,7 +18,7 @@ async function hmacHex(secret, message) {
 
 export async function onRequestGet({ request, env }) {
   const authorization = request.headers.get("Authorization") || "";
-  if (!/^Bearer\\s+\\S+$/i.test(authorization)) return json(401, { error: "আবার লগইন করুন।" });
+  if (!/^Bearer\s+\S+$/i.test(authorization)) return json(401, { error: "আবার লগইন করুন।" });
 
   const { base, apiKey } = getSupabaseConfig(env);
   const publicKey = String(env.OFFERWALL_PUBLIC_KEY || "").trim();
