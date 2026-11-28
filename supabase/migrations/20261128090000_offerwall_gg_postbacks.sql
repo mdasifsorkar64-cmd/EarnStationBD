@@ -49,10 +49,14 @@ begin
      or p_transaction_id is null
      or length(p_transaction_id) not between 1 and 64
      or p_amount is null
-     or p_currency_name <> 'BDT'
+     or p_currency_name is distinct from 'BDT'
+     or p_status is null
      or p_status not in ('credited','reversed') then
     raise exception 'Invalid Offerwall.GG callback payload';
   end if;
+
+  -- Serialize credit and reversal callbacks for the same provider transaction.
+  perform pg_advisory_xact_lock(hashtext('offerwall-gg:'||p_transaction_id)::bigint);
 
   v_event_status := case when coalesce(p_test,false) then 'test' else p_status end;
 
