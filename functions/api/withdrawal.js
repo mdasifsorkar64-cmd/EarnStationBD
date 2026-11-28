@@ -109,7 +109,7 @@ export async function onRequestPost({ request, env }) {
     return reply(request, 200, {
       success: true,
       request_id: typeof requestId === "string" ? requestId : null,
-      message: "উত্তোলনের অনুরোধ জমা হয়েছে। সর্বোচ্চ ৫ ঘণ্টার মধ্যে পেমেন্ট সম্পন্ন করা হবে, ইনশাআল্লাহ।"
+      message: "উত্তোলনের অনুরোধ জমা হয়েছে। অ্যাডমিন যাচাই করে পেমেন্ট করবেন। ৫ ঘণ্টার মধ্যে সম্পন্ন না হলে অনুরোধের টাকা স্বয়ংক্রিয়ভাবে ফেরত যাবে।"
     });
   } catch {
     return reply(request, 503, { error: "নিরাপদ সার্ভারে সাময়িক সমস্যা হচ্ছে। কিছুক্ষণ পর আবার চেষ্টা করুন।" });
