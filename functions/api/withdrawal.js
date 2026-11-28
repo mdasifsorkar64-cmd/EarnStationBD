@@ -85,7 +85,7 @@ export async function onRequestPost({ request, env }) {
         const detail = String(error.message || "");
         if (/insufficient available balance/i.test(detail)) message = "আপনার উত্তোলনযোগ্য ব্যালেন্সের চেয়ে বেশি টাকা চাওয়া হয়েছে।";
         else if (/authentication required|jwt expired|invalid jwt/i.test(detail)) message = "আপনার লগইন সেশন শেষ হয়েছে। আবার লগইন করুন।";
-        else if (/withdrawal.*(once|day)|already.*withdraw/i.test(detail)) message = "আপনি আজকের উত্তোলনের সীমা ব্যবহার করেছেন। আগামীকাল আবার চেষ্টা করুন।";
+        else if (/withdrawal.*(once|day)|already.*withdraw|আজ একবার উইথড্র|দিনে মাত্র ১ বার/i.test(detail)) message = "আপনি আজকের উত্তোলনের সীমা ব্যবহার করেছেন। আগামীকাল আবার চেষ্টা করুন।";
         else if (/minimum withdrawal/i.test(detail)) message = "আপনার চাওয়া টাকার পরিমাণ সর্বনিম্ন উত্তোলনের সীমার চেয়ে কম।";
         else if (/08:00|20:00|উইথড্রের সময় সকাল ৮টা/i.test(detail)) message = "বাংলাদেশ সময় সকাল ৮টা থেকে রাত ৮টার মধ্যে উত্তোলনের অনুরোধ করুন।";
         else if (/invalid amount/i.test(detail)) message = "সঠিক উত্তোলনের পরিমাণ লিখুন।";
