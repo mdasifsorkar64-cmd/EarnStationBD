@@ -104,13 +104,19 @@ export async function onRequest({ request, env }) {
     const raw = await result.text();
     if (!result.ok) {
       let message = "পেমেন্ট স্ট্যাটাস আপডেট করা যায়নি।";
-      try { const parsed = JSON.parse(raw); if (parsed.message) message = parsed.message; } catch {}
+      // Never expose raw PostgREST/database messages to the admin UI.
+      try {
+        const parsed = JSON.parse(raw);
+        if (/already.*paid|already.*completed/i.test(parsed.message || "")) message = "এই উত্তোলনের পেমেন্ট আগেই সম্পন্ন হয়েছে।";
+        else if (/not found|no rows/i.test(parsed.message || "")) message = "উত্তোলনের রেকর্ডটি পাওয়া যায়নি। তালিকা রিফ্রেশ করুন।";
+        else if (/permission|admin/i.test(parsed.message || "")) message = "এই কাজটি করার অ্যাডমিন অনুমতি নেই।";
+      } catch {}
       return reply(request, 400, { error: message });
     }
     let status = raw;
     try { status = JSON.parse(raw); } catch {}
     return reply(request, 200, { success: true, status });
   } catch (error) {
-    return reply(request, 403, { error: error.message || "অ্যাডমিন অনুমোদন যাচাই করা যায়নি।" });
+    return reply(request, 403, { error: error.message === "আবার লগইন করুন。" ? error.message : "অ্যাডমিন অনুমোদন যাচাই করা যায়নি। আবার চেষ্টা করুন।" });
   }
 }
