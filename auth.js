@@ -118,6 +118,7 @@
       document.getElementById("recovery-password-area").hidden = false;
       recoverySay("ইমেইল OTP ও সংরক্ষিত ফোন নম্বর মিলেছে। এখন নতুন পাসওয়ার্ড দিন।", "success");
     } catch (error) {
+      await client.auth.signOut();
       recoverySay(error.message || "OTP যাচাই করা যায়নি।", "error");
     } finally {
       button.disabled = false;
