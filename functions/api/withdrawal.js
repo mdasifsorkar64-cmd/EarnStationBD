@@ -85,12 +85,18 @@ export async function onRequestPost({ request, env }) {
         else if (/authentication required|jwt expired|invalid jwt/i.test(error.message || "")) message = "আপনার লগইন সেশন শেষ হয়েছে। আবার লগইন করুন।";
         else if (/withdrawal.*(once|day)|already.*withdraw/i.test(error.message || "")) message = "আপনি আজকের উত্তোলনের সীমা ব্যবহার করেছেন। আগামীকাল আবার চেষ্টা করুন।";
       } catch {}
-      return reply(request, response.status === 401 ? 401 : 400, { error: message });
+      const safeStatus = response.status === 401 ? 401
+        : response.status === 403 ? 403
+        : response.status === 429 ? 429
+        : response.status >= 500 ? 503 : 400;
+      return reply(request, safeStatus, { error: message });
     }
 
+    let requestId = null;
+    try { requestId = JSON.parse(raw); } catch {}
     return reply(request, 200, {
       success: true,
-      request_id: raw,
+      request_id: typeof requestId === "string" ? requestId : null,
       message: "উত্তোলনের অনুরোধ জমা হয়েছে। সর্বোচ্চ ৫ ঘণ্টার মধ্যে পেমেন্ট সম্পন্ন করা হবে, ইনশাআল্লাহ।"
     });
   } catch {
