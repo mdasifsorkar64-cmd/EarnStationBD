@@ -39,6 +39,7 @@
     fullName.required = signup;
     confirmPassword.required = signup;
     loginOptions.hidden = signup;
+    recoveryLink.hidden = signup;
     title.textContent = signup ? "নিবন্ধন করুন" : "লগইন করুন";
     subtitle.textContent = signup ? "নতুন অ্যাকাউন্ট তৈরি করুন" : "আপনার অ্যাকাউন্টে প্রবেশ করুন";
     submit.querySelector("span").textContent = signup ? "নিবন্ধন করুন" : "লগইন করুন";
