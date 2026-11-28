@@ -86,7 +86,7 @@ export async function onRequestPost({ request, env }) {
     p_status: status,
     p_offer_id: String(form.get("offerId") || "").slice(0, 120),
     p_offer_name: String(form.get("offerName") || "").slice(0, 240),
-    p_currency_name: currencyName,
+    p_currency_name: "BDT",
     p_payout_usd: Number.isFinite(payoutUsd) ? payoutUsd : 0,
     p_test: test
   };
