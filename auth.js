@@ -97,7 +97,7 @@
         window.location.href = "dashboard.html";
       }
     } catch (error) {
-      setMessage(error.message || "কাজটি সম্পন্ন হয়নি। আবার চেষ্টা করুন।", "error");
+      setMessage(window.EarnStationErrors.toBengali(error, "কাজটি সম্পন্ন হয়নি। আবার চেষ্টা করুন।"), "error");
     } finally {
       submit.disabled = false;
     }
