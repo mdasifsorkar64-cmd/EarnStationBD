@@ -37,7 +37,7 @@ export async function onRequestPost({ request, env }) {
   }
 
   const authorization = request.headers.get("Authorization") || "";
-  if (!/^Bearer\s+\\S+$/i.test(authorization)) {
+  if (!/^Bearer\s+\S+$/i.test(authorization)) {
     return reply(request, 401, { error: "আবার লগইন করুন।" });
   }
 
