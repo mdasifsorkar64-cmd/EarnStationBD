@@ -134,6 +134,37 @@
     });
   }
 
+  async function loadOfferwallWall() {
+    const status = $("offerwall-status");
+    const frame = $("offerwall-frame");
+    if (!status || !frame) return;
+    frame.hidden = true;
+    frame.removeAttribute("src");
+    status.textContent = "Offerwall.GG-এর নিরাপদ সংযোগ যাচাই হচ্ছে...";
+    try {
+      const { data: { session }, error } = await client.auth.getSession();
+      if (error || !session) {
+        status.textContent = "Offerwall দেখতে আবার লগইন করুন।";
+        return;
+      }
+      const response = await fetch("/api/offerwall-session", {
+        headers: { Authorization: "Bearer " + session.access_token }
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        status.textContent = result.error || "Offerwall.GG এখনো প্রস্তুত নয়।";
+        return;
+      }
+      const wallUrl = new URL(result.wall_url);
+      if (wallUrl.origin !== "https://offerwall.gg") throw new Error("অপরিচিত Offerwall ঠিকানা।");
+      frame.src = wallUrl.href;
+      frame.hidden = false;
+      status.textContent = "নিচের অফারগুলোতে অংশ নেওয়ার আগে প্রতিটি কাজের শর্ত ভালোভাবে পড়ুন।";
+    } catch (_) {
+      status.textContent = "Offerwall.GG লোড করা যায়নি। কিছুক্ষণ পর আবার চেষ্টা করুন।";
+    }
+  }
+
   async function loadReferralInfo() {
     const {data,error}=await client.rpc("get_my_referral_summary");
     if(error)throw error;
@@ -266,6 +297,7 @@
     renderInbox(inboxResult.data || [], withdrawals, inboxResult.error);
     const offerResult = await client.from("offers").select("id,title,description,partner_name,destination_url,terms,created_at").eq("status","active").order("created_at",{ascending:false}).limit(30);
     renderOffers(offerResult.data || [], offerResult.error);
+    await loadOfferwallWall();
   }
 
   function renderActivity(ledger, conversions, withdrawals) {
