@@ -13,6 +13,7 @@
     [/weak password|password should be|password.*(at least|minimum)/i, "পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের এবং নিরাপদ হতে হবে।"],
     [/otp.*(expired|invalid)|token.*(expired|invalid)|invalid.*otp/i, "OTP সঠিক নয় অথবা মেয়াদ শেষ হয়েছে। নতুন OTP নিয়ে আবার চেষ্টা করুন।"],
     [/rate limit|too many requests|over_email_send_rate_limit/i, "অল্প সময়ে অনেকবার চেষ্টা হয়েছে। কিছুক্ষণ অপেক্ষা করে আবার চেষ্টা করুন।"],
+    [/authentication required|not authenticated|unauthorized|invalid jwt/i, "আপনার লগইন সেশন সঠিক নয় বা মেয়াদ শেষ হয়েছে। আবার লগইন করুন।"],
     [/jwt expired|session.*(missing|not found|expired)|refresh token/i, "আপনার লগইন সেশনের মেয়াদ শেষ হয়েছে। আবার লগইন করুন।"],
     [/permission denied|row level security|not allowed|42501/i, "এই কাজটি করার অনুমতি আপনার নেই। প্রয়োজনে সহায়তা কেন্দ্রে যোগাযোগ করুন।"],
     [/network|failed to fetch|load failed|fetch failed|offline/i, "ইন্টারনেট সংযোগে সমস্যা হচ্ছে। সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।"],
