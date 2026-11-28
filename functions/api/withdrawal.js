@@ -37,7 +37,7 @@ export async function onRequestPost({ request, env }) {
   }
 
   const authorization = request.headers.get("Authorization") || "";
-  if (!/^Bearer\\s+\\S+$/i.test(authorization)) {
+  if (!/^Bearer\s+\\S+$/i.test(authorization)) {
     return reply(request, 401, { error: "আবার লগইন করুন।" });
   }
 
@@ -65,7 +65,7 @@ export async function onRequestPost({ request, env }) {
     const account = String(input.account || "").replace(/[^0-9]/g, "");
     const amount = Number(input.amount);
     if (!["bkash", "nagad"].includes(method)) return reply(request, 400, { error: "বিকাশ অথবা নগদ নির্বাচন করুন।" });
-    if (!/^01[3-9]\\d{8}$/.test(account)) return reply(request, 400, { error: "সঠিক ১১ সংখ্যার বাংলাদেশি মোবাইল নম্বর লিখুন।" });
+    if (!/^01[3-9]\d{8}$/.test(account)) return reply(request, 400, { error: "সঠিক ১১ সংখ্যার বাংলাদেশি মোবাইল নম্বর লিখুন।" });
     if (!Number.isFinite(amount) || amount <= 0 || Math.round(amount * 100) !== amount * 100) {
       return reply(request, 400, { error: "সঠিক উত্তোলনের পরিমাণ লিখুন।" });
     }
