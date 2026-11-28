@@ -172,7 +172,7 @@
   async function sendPresenceHeartbeat() {
     if (!currentUser || document.visibilityState !== "visible") return;
     const { error } = await client.rpc("member_presence_heartbeat");
-    if (error) console.warn("Presence heartbeat:", error.message);
+    if (error) console.warn("Presence heartbeat:", window.EarnStationErrors.toBengali(error));
   }
   function startPresenceHeartbeat() {
     if (presenceTimer) clearInterval(presenceTimer);
@@ -186,7 +186,7 @@
   async function loadDashboard(user) {
     currentUser = user;
     startPresenceHeartbeat();
-    try { await client.rpc("claim_referral_bonus"); } catch (e) { console.warn("Referral bonus check:", e.message); }
+    try { await client.rpc("claim_referral_bonus"); } catch (e) { console.warn("Referral bonus check:", window.EarnStationErrors.toBengali(e)); }
     $("member-email").textContent = user.email || "সদস্য অ্যাকাউন্ট";
     $("profile-email").value = user.email || "";
     const refreshButton = $("dashboard-refresh");
@@ -341,7 +341,7 @@
             const {error} = await client.rpc("mark_my_inbox_item_read",{p_inbox_id:item.id});
             if (error) {
               readButton.disabled = false;
-              alert("নোটিফিকেশন পড়া হিসেবে চিহ্নিত করা যায়নি: " + error.message);
+              alert(window.EarnStationErrors.toBengali(error));
               return;
             }
             item.read_at = new Date().toISOString();
@@ -400,7 +400,7 @@
       $("profile-avatar").textContent = [...fullName][0] || "আ";
       setMessage("প্রোফাইল সফলভাবে আপডেট হয়েছে।","success");
     } catch (error) {
-      setMessage(error.message || "প্রোফাইল আপডেট করা যায়নি।","error");
+      setMessage(window.EarnStationErrors.toBengali(error, "প্রোফাইল আপডেট করা যায়নি।"),"error");
     } finally {
       profileSave.disabled = false; profileSave.textContent = "পরিবর্তন সংরক্ষণ করুন";
     }
@@ -430,7 +430,7 @@
       passwordChangeForm.reset();
       showPasswordMessage("পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে। নতুন পাসওয়ার্ড দিয়ে পরবর্তী লগইন করতে পারবেন।", "success");
     } catch (error) {
-      showPasswordMessage(error.message || "পাসওয়ার্ড পরিবর্তন করা যায়নি। আবার চেষ্টা করুন।", "error");
+      showPasswordMessage(window.EarnStationErrors.toBengali(error, "পাসওয়ার্ড পরিবর্তন করা যায়নি। আবার চেষ্টা করুন।"), "error");
     } finally {
       button.disabled = false; button.textContent = "পাসওয়ার্ড পরিবর্তন করুন";
     }
@@ -460,7 +460,7 @@
       if (error) throw error;
       recoveryStage = "otp"; $("profile-recovery-otp-area").hidden = false;
       recoverySay("আপনার ইমেইলে ৬ সংখ্যার OTP পাঠানো হয়েছে। ইনবক্স ও স্প্যাম ফোল্ডার দেখুন।", "success");
-    } catch (error) { recoverySay(error.message || "OTP পাঠানো যায়নি।", "error"); }
+    } catch (error) { recoverySay(window.EarnStationErrors.toBengali(error, "OTP পাঠানো যায়নি।"), "error"); }
     finally { button.disabled = false; }
   });
   $("profile-recovery-verify").addEventListener("click", async () => {
@@ -479,7 +479,7 @@
       recoveryVerified = true;
       $("profile-recovery-password-area").hidden = false;
       recoverySay("ইমেইল OTP ও সংরক্ষিত ফোন নম্বর মিলেছে। নতুন পাসওয়ার্ড দিন।", "success");
-    } catch (error) { recoverySay(error.message || "OTP যাচাই করা যায়নি।", "error"); }
+    } catch (error) { recoverySay(window.EarnStationErrors.toBengali(error, "OTP যাচাই করা যায়নি।"), "error"); }
     finally { button.disabled = false; }
   });
   $("profile-recovery-save").addEventListener("click", async () => {
@@ -498,7 +498,7 @@
       $("profile-recovery-confirm-password").value = "";
       recoveryVerified = false;
       recoverySay("পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে। আপনার অ্যাকাউন্ট লগইন অবস্থায় আছে।", "success");
-    } catch (error) { recoverySay(error.message || "নতুন পাসওয়ার্ড সংরক্ষণ করা যায়নি।", "error"); }
+    } catch (error) { recoverySay(window.EarnStationErrors.toBengali(error, "নতুন পাসওয়ার্ড সংরক্ষণ করা যায়নি।"), "error"); }
     finally { button.disabled = false; }
   });
 
@@ -569,7 +569,7 @@
       withdrawForm.reset();
       await loadDashboard(currentUser);
     } catch(error) {
-      withdrawMessage(error.message || "নিরাপদ সার্ভারে সংযোগ করা যায়নি।","error");
+      withdrawMessage(window.EarnStationErrors.toBengali(error, "নিরাপদ সার্ভারে সংযোগ করা যায়নি।"),"error");
     } finally {
       submit.disabled=false; submit.textContent="উত্তোলনের অনুরোধ করুন";
     }
@@ -578,7 +578,7 @@
   logout.addEventListener("click", async () => {
     logout.disabled = true;
     const {error} = await client.auth.signOut();
-    if (error) { alert("লগআউট হয়নি: " + error.message); logout.disabled = false; }
+    if (error) { alert(window.EarnStationErrors.toBengali(error)); logout.disabled = false; }
     else window.location.replace("auth.html");
   });
 
@@ -588,7 +588,7 @@
     if (!currentUser) return;
     refreshDashboard.disabled = true; refreshDashboard.classList.add("is-loading");
     try { await loadDashboard(currentUser); }
-    catch (error) { showError(error.message || "তথ্য রিফ্রেশ করা যায়নি।"); }
+    catch (error) { showError(window.EarnStationErrors.toBengali(error, "তথ্য রিফ্রেশ করা যায়নি।")); }
     finally { refreshDashboard.disabled = false; refreshDashboard.classList.remove("is-loading"); }
   });
 
@@ -599,6 +599,6 @@
     const {data,error} = await client.auth.getSession();
     if (error || !data.session) { window.location.replace("auth.html"); return; }
     try { await loadDashboard(data.session.user); }
-    catch (error) { showError(error.message || "আবার চেষ্টা করুন।"); }
+    catch (error) { showError(window.EarnStationErrors.toBengali(error, "আবার চেষ্টা করুন।")); }
   })();
 })();
