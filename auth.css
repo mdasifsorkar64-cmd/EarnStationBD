@@ -10,3 +10,10 @@
 .auth-page .brand-points .ui-icon{width:16px;height:16px;color:#79e2bd}
 .auth-page .mini-logo{display:grid;place-items:center}
 .auth-page .mini-logo .ui-icon{width:20px;height:20px;stroke-width:2.2}
+
+.auth-recovery-link{display:block;margin:12px auto 0;padding:7px 10px;border:0;background:transparent;color:#315fe1;font:inherit;font-size:12px;font-weight:850;cursor:pointer}
+.auth-recovery-panel{margin-top:18px;padding-top:15px;border-top:1px solid #edf0f8}
+.auth-recovery-panel[hidden],.auth-recovery-link[hidden]{display:none}
+.auth-recovery-panel h3{margin:0 0 6px;color:#18265f;font-size:19px}
+.auth-recovery-panel .auth-submit{margin-top:12px}
+.auth-card form[hidden],.auth-card .auth-tabs[hidden]{display:none}

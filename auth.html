@@ -68,6 +68,18 @@
         <div class="form-options" id="login-options"><label class="remember-option"><input type="checkbox" id="remember-me" checked><span>আমাকে মনে রাখুন</span></label><span class="secure-note"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg> নিরাপদ লগইন</span></div>
         <button class="button auth-submit" id="submit-button" type="submit"><span>লগইন করুন</span><svg viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button>
       </form>
+      <button type="button" id="show-recovery" class="auth-recovery-link">পাসওয়ার্ড ভুলে গেছেন?</button>
+      <section id="recovery-panel" class="auth-recovery-panel" hidden aria-labelledby="recovery-title">
+        <h3 id="recovery-title">পাসওয়ার্ড পুনরুদ্ধার</h3>
+        <p class="field-hint">নিবন্ধিত ইমেইল ও প্রোফাইলে সংরক্ষিত ফোন নম্বর দিয়ে যাচাই করুন।</p>
+        <div class="field-group"><label for="recovery-email">নিবন্ধিত ইমেইল</label><div class="input-wrap"><input id="recovery-email" type="email" autocomplete="email" required placeholder="আপনার নিবন্ধিত ইমেইল"></div></div>
+        <div class="field-group"><label for="recovery-phone">প্রোফাইলে সংরক্ষিত মোবাইল নম্বর</label><div class="input-wrap"><input id="recovery-phone" type="tel" inputmode="numeric" maxlength="11" autocomplete="tel" placeholder="01XXXXXXXXX" required></div></div>
+        <button type="button" class="button auth-submit" id="recovery-send">ইমেইলে OTP পাঠান</button>
+        <div id="recovery-otp-area" hidden><div class="field-group"><label for="recovery-otp">৬ সংখ্যার OTP</label><div class="input-wrap"><input id="recovery-otp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="৬ সংখ্যার কোড"></div></div><button type="button" class="button auth-submit" id="recovery-verify">OTP যাচাই করুন</button></div>
+        <div id="recovery-password-area" hidden><div class="field-group"><label for="recovery-new-password">নতুন পাসওয়ার্ড</label><div class="input-wrap"><input id="recovery-new-password" type="password" autocomplete="new-password" minlength="8" placeholder="কমপক্ষে ৮ অক্ষর"></div></div><div class="field-group"><label for="recovery-confirm-password">নতুন পাসওয়ার্ড নিশ্চিত করুন</label><div class="input-wrap"><input id="recovery-confirm-password" type="password" autocomplete="new-password" minlength="8" placeholder="আবার লিখুন"></div></div><button type="button" class="button auth-submit" id="recovery-save">নতুন পাসওয়ার্ড সংরক্ষণ করুন</button></div>
+        <p id="recovery-message" class="auth-message" role="status" aria-live="polite"></p>
+        <p class="auth-switch"><button type="button" id="recovery-back">লগইনে ফিরে যান</button></p>
+      </section>
       <p id="auth-message" class="auth-message" role="status" aria-live="polite"></p>
       <p class="auth-note">নিবন্ধনের পর আপনার ইমেইলে যাচাইকরণ লিংক পাঠানো হবে। ইমেইল যাচাই সম্পন্ন হলে লগইন করতে পারবেন।</p>
       <p class="auth-switch" id="auth-switch">নতুন সদস্য? <button type="button" id="switch-to-signup">এখনই নিবন্ধন করুন</button></p>
@@ -76,6 +88,7 @@
   <footer class="auth-footer">Power by : MD Asif Sorkar <span>♥ EarnStationBD ♥</span></footer>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
+  <script src="error-messages.js"></script>
   <script src="auth.js"></script>
 </body>
 </html>
