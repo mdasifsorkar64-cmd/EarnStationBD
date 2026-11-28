@@ -138,3 +138,14 @@
 .inbox-read-button:disabled{opacity:.55;cursor:wait}
 .inbox-subheading{margin:22px 0 6px;padding-top:15px;border-top:1px solid #edf0f8;font-size:13px;font-weight:850;color:#43516d}
 @media(max-width:560px){.income-inbox-row{align-items:flex-start}.inbox-row-actions{max-width:112px}.inbox-row-actions .activity-amount{white-space:nowrap}}
+
+
+/* Offerwall.GG hosted wall */
+.offerwall-panel{margin:18px 0 22px;padding:16px;border:1px solid var(--border-color,#e5e7eb);border-radius:16px;background:var(--card-bg,#fff)}
+.offerwall-panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.offerwall-panel-head b{font-size:1rem}
+.offerwall-label{font-size:.75rem;padding:5px 9px;border-radius:999px;background:#eef7ff;color:#175c91}
+.offerwall-status{font-size:.88rem;line-height:1.6;margin:10px 0;color:var(--muted,#64748b)}
+.offerwall-frame{display:block;width:100%;height:780px;border:0;border-radius:12px;background:#fff}
+.offerwall-frame[hidden]{display:none}
+@media(max-width:600px){.offerwall-panel{padding:12px;margin:14px 0}.offerwall-frame{height:720px}}
