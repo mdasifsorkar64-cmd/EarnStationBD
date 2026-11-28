@@ -6,7 +6,7 @@
   const fmt=v=>v?new Date(v).toLocaleString("bn-BD",{dateStyle:"medium",timeStyle:"short"}):"তথ্য নেই";
   const money=v=>"৳ "+Number(v||0).toFixed(2);
   const el=(tag,cls,txt)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(txt!==undefined)n.textContent=txt;return n;};
-  const button=(label,action,cls="")=>{const b=el("button","status-button "+cls,label);b.type="button";b.addEventListener("click",()=>Promise.resolve().then(action).catch(e=>message(e.message||"কাজটি সম্পন্ন হয়নি।",true)));return b;};
+  const button=(label,action,cls="")=>{const b=el("button","status-button "+cls,label);b.type="button";b.addEventListener("click",()=>Promise.resolve().then(action).catch(e=>message(window.EarnStationErrors.toBengali(e, "কাজটি সম্পন্ন হয়নি।"),true)));return b;};
   function showView(name){document.querySelectorAll(".admin-view").forEach(v=>v.classList.toggle("active",v.id==="view-"+name));document.querySelectorAll(".admin-nav").forEach(v=>v.classList.toggle("active",v.dataset.view===name));}
   function navigateView(name){if(!document.getElementById("view-"+name))return;history.pushState({adminView:name},"","#admin-"+name);showView(name);}
   history.replaceState({adminView:"overview"},"","#admin-overview");
@@ -15,13 +15,13 @@
   document.querySelectorAll(".admin-nav").forEach(b=>b.addEventListener("click",()=>navigateView(b.dataset.view)));
   document.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>navigateView(b.dataset.go)));
   const membersStatCard=$("members-stat-card");
-  const openMembersFromStat=()=>{navigateView("members");$("member-search").value="";loadMembers().catch(e=>message(e.message||"সদস্য তালিকা লোড করা যায়নি।",true));};
+  const openMembersFromStat=()=>{navigateView("members");$("member-search").value="";loadMembers().catch(e=>message(window.EarnStationErrors.toBengali(e, "সদস্য তালিকা লোড করা যায়নি।"),true));};
   membersStatCard.addEventListener("click",openMembersFromStat);
   membersStatCard.addEventListener("keydown",event=>{if(event.key==="Enter"||event.key===" "){event.preventDefault();openMembersFromStat();}});
   const statCardActions={
-    "offers-stat-card":()=>{navigateView("offers");loadOffers().catch(e=>message(e.message||"অফার তালিকা লোড হয়নি।",true));},
-    "pending-stat-card":()=>{navigateView("conversions");loadConversions().catch(e=>message(e.message||"কমিশন তালিকা লোড হয়নি।",true));},
-    "withdrawals-stat-card":()=>{navigateView("withdrawals");loadWithdrawals().catch(e=>message(e.message||"উত্তোলন তালিকা লোড হয়নি।",true));}
+    "offers-stat-card":()=>{navigateView("offers");loadOffers().catch(e=>message(window.EarnStationErrors.toBengali(e, "অফার তালিকা লোড হয়নি।"),true));},
+    "pending-stat-card":()=>{navigateView("conversions");loadConversions().catch(e=>message(window.EarnStationErrors.toBengali(e, "কমিশন তালিকা লোড হয়নি।"),true));},
+    "withdrawals-stat-card":()=>{navigateView("withdrawals");loadWithdrawals().catch(e=>message(window.EarnStationErrors.toBengali(e, "উত্তোলন তালিকা লোড হয়নি।"),true));}
   };
   Object.entries(statCardActions).forEach(([id,action])=>{const card=$(id);card.addEventListener("click",action);card.addEventListener("keydown",event=>{if(event.key==="Enter"||event.key===" "){event.preventDefault();action();}});});
   const ownerMoney=v=>"৳ "+Number(v||0).toFixed(2);
@@ -79,9 +79,9 @@
     $("owner-withdrawal-submit").disabled=true;
     try{const {error}=await client.rpc("admin_record_owner_withdrawal",{p_amount:amount,p_method:method,p_transaction_id:txid,p_note:note});if(error)throw error;
       $("owner-withdrawal-form").reset();message("মালিকের উত্তোলন রেকর্ড হয়েছে।");await loadOwnerWallet();
-    }catch(e){message(e.message||"উত্তোলন রেকর্ড করা যায়নি।",true);}finally{$("owner-withdrawal-submit").disabled=false;}
+    }catch(e){message(window.EarnStationErrors.toBengali(e, "উত্তোলন রেকর্ড করা যায়নি।"),true);}finally{$("owner-withdrawal-submit").disabled=false;}
   });
-  $("refresh-owner-wallet").addEventListener("click",()=>loadOwnerWallet().catch(e=>message(e.message,true)));
+  $("refresh-owner-wallet").addEventListener("click",()=>loadOwnerWallet().catch(e=>message(window.EarnStationErrors.toBengali(e),true)));
 
   async function loadSettings(){
     $("settings-status").textContent="সেটিংস লোড হচ্ছে...";
@@ -104,10 +104,10 @@
       if(error)throw error;
       $("settings-status").textContent="সেটিংস সংরক্ষিত হয়েছে। বিজ্ঞাপন আপাতত বন্ধ আছে।";
       message("আয় ও উত্তোলনের নিয়ম আপডেট হয়েছে।");
-    }catch(e){$("settings-status").textContent=e.message||"সেটিংস সংরক্ষণ করা যায়নি。";message(e.message||"সেটিংস সংরক্ষণ করা যায়নি।",true);}
+    }catch(e){$("settings-status").textContent=window.EarnStationErrors.toBengali(e, "সেটিংস সংরক্ষণ করা যায়নি。");message(window.EarnStationErrors.toBengali(e, "সেটিংস সংরক্ষণ করা যায়নি।"),true);}
     finally{$("save-settings").disabled=false;}
   });
-  $("refresh-settings").addEventListener("click",()=>Promise.all([loadSettings(),loadReferralSettings()]).catch(e=>message(e.message,true)));
+  $("refresh-settings").addEventListener("click",()=>Promise.all([loadSettings(),loadReferralSettings()]).catch(e=>message(window.EarnStationErrors.toBengali(e),true)));
   async function loadReferralSettings(){
     const {data,error}=await client.rpc("admin_get_referral_settings");if(error)throw error;
     const row=Array.isArray(data)?data[0]:data;if(!row)throw new Error("রেফারেল সেটিংস পাওয়া যায়নি।");
@@ -120,7 +120,7 @@
     if(!Number.isFinite(amount)||amount<0||amount>10000){$("referral-settings-status").textContent="০ থেকে ১০,০০০ টাকার মধ্যে পরিমাণ লিখুন।";return;}
     $("save-referral-settings").disabled=true;
     try{const {error}=await client.rpc("admin_update_referral_bonus",{p_bonus_amount:amount});if(error)throw error;await loadReferralSettings();message("রেফারেল কমিশন আপডেট হয়েছে।");}
-    catch(e){$("referral-settings-status").textContent=e.message||"রেফারেল বোনাস সংরক্ষণ হয়নি।";message(e.message||"রেফারেল বোনাস সংরক্ষণ হয়নি।",true);}
+    catch(e){$("referral-settings-status").textContent=window.EarnStationErrors.toBengali(e, "রেফারেল বোনাস সংরক্ষণ হয়নি।");message(window.EarnStationErrors.toBengali(e, "রেফারেল বোনাস সংরক্ষণ হয়নি।"),true);}
     finally{$("save-referral-settings").disabled=false;}
   });
     async function loadMembers(){
@@ -216,10 +216,10 @@ async function loadOffers(){
       root.append(row);
     });
   }
-  $("offer-form").addEventListener("submit",async event=>{event.preventDefault();const form=event.currentTarget,data=Object.fromEntries(new FormData(form).entries());try{const url=new URL(data.destination_url);if(!["https:","http:"].includes(url.protocol))throw new Error("শুধু HTTP/HTTPS লিংক ব্যবহার করুন।");$("offer-submit").disabled=true;message("অফার সংরক্ষণ হচ্ছে...");const {error}=await client.from("offers").insert({...data,status:"pending"});if(error)throw error;form.reset();message("অফার সংরক্ষিত হয়েছে। Pending অবস্থায় রাখা হয়েছে।");await loadOffers();}catch(e){message(e.message||"অফার সংরক্ষণ করা যায়নি।",true);}finally{$("offer-submit").disabled=false;}});
-  $("refresh-offers").addEventListener("click",()=>loadOffers().catch(e=>message(e.message,true)));
-  $("refresh-conversions").addEventListener("click",()=>loadConversions().catch(e=>message(e.message,true)));
-  $("refresh-withdrawals").addEventListener("click",()=>loadWithdrawals().catch(e=>message(e.message,true)));
+  $("offer-form").addEventListener("submit",async event=>{event.preventDefault();const form=event.currentTarget,data=Object.fromEntries(new FormData(form).entries());try{const url=new URL(data.destination_url);if(!["https:","http:"].includes(url.protocol))throw new Error("শুধু HTTP/HTTPS লিংক ব্যবহার করুন।");$("offer-submit").disabled=true;message("অফার সংরক্ষণ হচ্ছে...");const {error}=await client.from("offers").insert({...data,status:"pending"});if(error)throw error;form.reset();message("অফার সংরক্ষিত হয়েছে। Pending অবস্থায় রাখা হয়েছে।");await loadOffers();}catch(e){message(window.EarnStationErrors.toBengali(e, "অফার সংরক্ষণ করা যায়নি।"),true);}finally{$("offer-submit").disabled=false;}});
+  $("refresh-offers").addEventListener("click",()=>loadOffers().catch(e=>message(window.EarnStationErrors.toBengali(e),true)));
+  $("refresh-conversions").addEventListener("click",()=>loadConversions().catch(e=>message(window.EarnStationErrors.toBengali(e),true)));
+  $("refresh-withdrawals").addEventListener("click",()=>loadWithdrawals().catch(e=>message(window.EarnStationErrors.toBengali(e),true)));
 
   async function loadCommunitySettings(){
     $("community-status").textContent="কমিউনিটি লিংক লোড হচ্ছে...";
@@ -235,7 +235,7 @@ async function loadOffers(){
       $("save-community").disabled=true; $("community-status").textContent="লিংক সংরক্ষণ হচ্ছে...";
       const {error}=await client.rpc("admin_update_community_links",{p_facebook_url:values.facebook,p_telegram_url:values.telegram,p_whatsapp_url:values.whatsapp,p_youtube_url:values.youtube}); if(error)throw error;
       $("community-status").textContent="কমিউনিটি লিংক সংরক্ষিত হয়েছে।"; message("কমিউনিটি লিংক আপডেট হয়েছে।");
-    } catch(e){$("community-status").textContent=e.message||"লিংক সংরক্ষণ করা যায়নি।"; message(e.message||"লিংক সংরক্ষণ করা যায়নি।",true);}
+    } catch(e){$("community-status").textContent=window.EarnStationErrors.toBengali(e, "লিংক সংরক্ষণ করা যায়নি।"); message(window.EarnStationErrors.toBengali(e, "লিংক সংরক্ষণ করা যায়নি।"),true);}
     finally{$("save-community").disabled=false;}
   });
 
@@ -252,12 +252,12 @@ async function loadOffers(){
   $("site-form").addEventListener("submit",async event=>{event.preventDefault();$("save-site").disabled=true;try{
     const {error}=await client.rpc("admin_update_site_settings",{p_site_name:$("site-name").value.trim(),p_site_tagline:$("site-tagline").value.trim(),p_announcement:$("site-announcement").value.trim(),p_contact_email:$("site-contact").value.trim()||null});if(error)throw error;
     $("site-status").textContent="ওয়েবসাইট সেটিংস সংরক্ষিত হয়েছে।";message("ওয়েবসাইট সেটিংস আপডেট হয়েছে।");await loadSiteSettings();
-  }catch(e){$("site-status").textContent=e.message||"সংরক্ষণ করা যায়নি।";message(e.message||"সংরক্ষণ করা যায়নি।",true);}finally{$("save-site").disabled=false;}});
-  $("refresh-site").addEventListener("click",()=>loadSiteSettings().catch(e=>message(e.message,true)));
+  }catch(e){$("site-status").textContent=window.EarnStationErrors.toBengali(e, "সংরক্ষণ করা যায়নি।");message(window.EarnStationErrors.toBengali(e, "সংরক্ষণ করা যায়নি।"),true);}finally{$("save-site").disabled=false;}});
+  $("refresh-site").addEventListener("click",()=>loadSiteSettings().catch(e=>message(window.EarnStationErrors.toBengali(e),true)));
 
-  async function refreshAll(){try{await Promise.all([loadMembers(),loadOffers(),loadConversions(),loadWithdrawals(),loadOwnerWallet(),loadSettings(),loadSiteSettings(),loadReferralSettings()]);message("সব তথ্য আপডেট হয়েছে।");}catch(e){message(e.message||"তথ্য লোড করা যায়নি।",true);}}
+  async function refreshAll(){try{await Promise.all([loadMembers(),loadOffers(),loadConversions(),loadWithdrawals(),loadOwnerWallet(),loadSettings(),loadSiteSettings(),loadReferralSettings()]);message("সব তথ্য আপডেট হয়েছে।");}catch(e){message(window.EarnStationErrors.toBengali(e, "তথ্য লোড করা যায়নি।"),true);}}
   $("refresh-all").addEventListener("click",refreshAll);
   (async()=>{try{const {data,error}=await client.auth.getSession();if(error)throw error;if(!data.session){location.replace("auth.html");return;}const {data:profile,error:pe}=await client.from("profiles").select("role").eq("id",data.session.user.id).single();if(pe)throw pe;if(profile?.role!=="admin"){location.replace("dashboard.html");return;}
     $("admin-top").hidden=false;$("admin-content").hidden=false;$("admin-footer").hidden=false;message("অ্যাডমিন যাচাই সফল।");await refreshAll();
-  }catch(e){message(e.message||"অ্যাডমিন প্যানেল লোড করা যায়নি।",true);}})();
+  }catch(e){message(window.EarnStationErrors.toBengali(e, "অ্যাডমিন প্যানেল লোড করা যায়নি।"),true);}})();
 })();
