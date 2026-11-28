@@ -76,7 +76,7 @@ begin
   end if;
 
   if p_status='credited' then
-    if p_amount <= 0 then raise exception 'Credited amount must be positive'; end if;
+    if p_amount <= 0 or round(p_amount,2) <= 0 then raise exception 'Credited amount must be positive after BDT rounding'; end if;
 
     if exists (
       select 1 from private.offerwall_gg_postback_events
@@ -101,7 +101,7 @@ begin
     insert into public.partner_conversions
       (partner_name,external_conversion_id,user_id,gross_amount,commission_amount,currency,status,review_note)
     values
-      ('Offerwall.GG',p_transaction_id,p_user_id,p_amount,p_amount,'BDT','pending','Signed Offerwall.GG callback; admin review required.')
+      ('Offerwall.GG',p_transaction_id,p_user_id,round(p_amount,2),round(p_amount,2),'BDT','pending','Signed Offerwall.GG callback; admin review required.')
     on conflict (partner_name,external_conversion_id) do nothing
     returning * into v_conversion;
 
@@ -134,7 +134,7 @@ begin
       return jsonb_build_object('ok',true,'credited',false,'reason','original_conversion_not_found');
     end if;
 
-    if round(abs(p_amount),4) <> round(v_conversion.commission_amount,4) then
+    if round(abs(p_amount),2) <> round(v_conversion.commission_amount,2) then
       update private.offerwall_gg_postback_events
         set conversion_id=v_conversion.id,processing_status='amount_mismatch_manual_review'
       where id=v_event_id;
