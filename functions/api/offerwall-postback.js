@@ -32,14 +32,14 @@ function validDecimal(value, maxDecimals) {
 
 export async function onRequestPost({ request, env }) {
   const secretKey = String(env.OFFERWALL_SECRET_KEY || "");
-  const base = String(env.SUPABASE_URL || "").replace(/\\/$/, "");
+  const base = String(env.SUPABASE_URL || "").replace(/\/$/, "");
   const serviceKey = String(env.SUPABASE_SERVICE_ROLE_KEY || "");
   if (!secretKey || !base || !serviceKey) {
     return json(503, { error: "পোস্টব্যাক সার্ভারের নিরাপদ কনফিগারেশন সম্পূর্ণ নয়।" });
   }
 
   const contentType = request.headers.get("Content-Type") || "";
-  if (!/^application\\/x-www-form-urlencoded(?:\\s*;|$)/i.test(contentType)) {
+  if (!/^application\/x-www-form-urlencoded(?:\s*;|$)/i.test(contentType)) {
     return json(415, { error: "Offerwall callback অবশ্যই POST form হিসেবে পাঠাতে হবে।" });
   }
 
