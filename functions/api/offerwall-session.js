@@ -37,6 +37,14 @@ export async function onRequestGet({ request, env }) {
     if (!user || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(user.id || ""))) {
       return json(401, { error: "সদস্য পরিচয় যাচাই করা যায়নি।" });
     }
+    const profileResponse = await fetch(base + "/rest/v1/profiles?id=eq." + encodeURIComponent(user.id) + "&select=role,account_status", {
+      headers: { apikey: apiKey, Authorization: authorization }
+    });
+    if (!profileResponse.ok) return json(403, { error: "সদস্য অ্যাকাউন্ট যাচাই করা যায়নি।" });
+    const profiles = await profileResponse.json();
+    if (!Array.isArray(profiles) || profiles.length !== 1 || profiles[0].role !== "member" || profiles[0].account_status !== "active") {
+      return json(403, { error: "এই অ্যাকাউন্টে Offerwall ব্যবহার অনুমোদিত নয়।" });
+    }
 
     const canonical = "appId=" + publicKey + "&userId=" + user.id;
     const signature = await hmacHex(secretKey, canonical);
