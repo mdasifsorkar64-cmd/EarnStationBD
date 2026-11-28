@@ -21,8 +21,6 @@ create table if not exists private.offerwall_gg_postback_events (
 
 alter table private.offerwall_gg_postback_events enable row level security;
 revoke all on table private.offerwall_gg_postback_events from anon, authenticated, public;
-grant usage on schema private to service_role;
-revoke all on schema private from anon, authenticated;
 
 create or replace function public.offerwall_gg_process_postback(
   p_user_id uuid,
