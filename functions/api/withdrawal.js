@@ -62,7 +62,8 @@ export async function onRequestPost({ request, env }) {
     }
 
     const method = input.method;
-    const account = String(input.account || "").replace(/[^0-9]/g, "");
+    const accountInput = String(input.account || "").trim();
+    const account = accountInput.replace(/[ -]/g, "");
     const amount = Number(input.amount);
     if (!["bkash", "nagad"].includes(method)) return reply(request, 400, { error: "বিকাশ অথবা নগদ নির্বাচন করুন।" });
     if (!/^01[3-9]\d{8}$/.test(account)) return reply(request, 400, { error: "সঠিক ১১ সংখ্যার বাংলাদেশি মোবাইল নম্বর লিখুন।" });
