@@ -390,7 +390,7 @@
     const fullName = $("profile-name").value.trim();
     const phone = $("profile-phone").value.trim();
     if (!fullName) return setMessage("আপনার পূর্ণ নাম লিখুন।","error");
-    const normalizedPhone = phone.replace(/\D/g, "");
+    const normalizedPhone = phone.replace(/window.EarnStationErrors.toBengali(, )D/g, "");
     if (!/^01[3-9][0-9]{8}$/.test(normalizedPhone)) return setMessage("সঠিক ১১ সংখ্যার বাংলাদেশি মোবাইল নম্বর লিখুন।","error");
     profileSave.disabled = true; profileSave.textContent = "সংরক্ষণ হচ্ছে..."; setMessage("");
     try {
@@ -450,7 +450,7 @@
   });
   $("profile-recovery-send").addEventListener("click", async () => {
     const email = $("profile-recovery-email").value.trim().toLowerCase();
-    const phone = $("profile-recovery-phone").value.replace(/\D/g, "");
+    const phone = $("profile-recovery-phone").value.replace(/window.EarnStationErrors.toBengali(, )D/g, "");
     if (!currentUser?.email || email !== currentUser.email.toLowerCase()) return recoverySay("লগইন করা অ্যাকাউন্টের নিবন্ধিত ইমেইল ব্যবহার করুন।", "error");
     if (!/^01[3-9][0-9]{8}$/.test(phone)) return recoverySay("সঠিক ১১ সংখ্যার ফোন নম্বর লিখুন।", "error");
     const button = $("profile-recovery-send"); button.disabled = true;
@@ -465,7 +465,7 @@
   });
   $("profile-recovery-verify").addEventListener("click", async () => {
     const token = $("profile-recovery-otp").value.trim();
-    if (!/^\d{6}$/.test(token)) return recoverySay("ইমেইলে পাওয়া ৬ সংখ্যার OTP লিখুন।", "error");
+    if (!/^window.EarnStationErrors.toBengali(, )d{6}$/.test(token)) return recoverySay("ইমেইলে পাওয়া ৬ সংখ্যার OTP লিখুন।", "error");
     const button = $("profile-recovery-verify"); button.disabled = true;
     try {
       const { data, error } = await client.auth.verifyOtp({ email: currentUser.email, token, type: "recovery" });
@@ -473,7 +473,7 @@
       const user = data.user || data.session?.user;
       if (!user || user.id !== currentUser.id) throw new Error("OTP অন্য অ্যাকাউন্টের জন্য।");
       const { data: profile, error: profileError } = await client.from("profiles").select("phone").eq("id", user.id).maybeSingle();
-      const savedPhone = String(profile?.phone || "").replace(/\D/g, "");
+      const savedPhone = String(profile?.phone || "").replace(/window.EarnStationErrors.toBengali(, )D/g, "");
       const enteredPhone = sessionStorage.getItem("esbd_profile_recovery_phone") || "";
       if (profileError || !profile || savedPhone !== enteredPhone) throw new Error("ফোন নম্বরটি এই অ্যাকাউন্টের সংরক্ষিত নম্বরের সঙ্গে মিলছে না।");
       recoveryVerified = true;
