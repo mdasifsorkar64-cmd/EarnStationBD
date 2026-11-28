@@ -7,6 +7,8 @@ function json(status, body) {
 
 function safeEqualHex(left, right) {
   if (!/^[a-f0-9]{64}$/i.test(left) || !/^[a-f0-9]{64}$/i.test(right)) return false;
+  left = left.toLowerCase();
+  right = right.toLowerCase();
   let difference = 0;
   for (let i = 0; i < 64; i++) difference |= left.charCodeAt(i) ^ right.charCodeAt(i);
   return difference === 0;
@@ -36,6 +38,13 @@ export async function onRequestPost({ request, env }) {
   const serviceKey = String(env.SUPABASE_SERVICE_ROLE_KEY || "");
   if (!secretKey || !base || !serviceKey) {
     return json(503, { error: "পোস্টব্যাক সার্ভারের নিরাপদ কনফিগারেশন সম্পূর্ণ নয়।" });
+  }
+
+  try {
+    const parsedBase = new URL(base);
+    if (parsedBase.protocol !== "https:" || !parsedBase.hostname.endsWith(".supabase.co")) return json(503, { error: "Supabase server configuration is invalid." });
+  } catch {
+    return json(503, { error: "Supabase server configuration is invalid." });
   }
 
   const contentType = request.headers.get("Content-Type") || "";
