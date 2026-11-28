@@ -66,7 +66,7 @@
       if (password.value.length < 8) return setMessage("পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে।", "error");
       if (password.value !== confirmPassword.value) return setMessage("পাসওয়ার্ড এবং কনফার্ম পাসওয়ার্ড মিলছে না।", "error");
       if (!fullName.value.trim()) return setMessage("আপনার পূর্ণ নাম লিখুন।", "error");
-      const normalizedPhone = phone.value.replace(/\\D/g, "");
+      const normalizedPhone = phone.value.replace(/\D/g, "");
       if (!/^01[3-9][0-9]{8}$/.test(normalizedPhone)) return setMessage("সঠিক ১১ সংখ্যার বাংলাদেশি মোবাইল নম্বর লিখুন।", "error");
     }
     setMessage("অপেক্ষা করুন...");
@@ -77,7 +77,7 @@
         const { data, error } = await client.auth.signUp({
           ...credentials,
           options: {
-            data: { full_name: fullName.value.trim(), phone: phone.value.replace(/\\D/g, ""), referral_code: (referralCode?.value || "").trim().toUpperCase() },
+            data: { full_name: fullName.value.trim(), phone: phone.value.replace(/\D/g, ""), referral_code: (referralCode?.value || "").trim().toUpperCase() },
             emailRedirectTo: window.location.origin + "/dashboard.html"
           }
         });
